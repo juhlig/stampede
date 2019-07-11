@@ -1,0 +1,80 @@
+== Callbacks
+
+By default, any process belonging to a targeted application
+is a valid target for a stampede and may be killed.
+
+You may want to exclude some important processes, however,
+or only target very specific processes of your application.
+
+This can be achieved by giving a custom before-kill callback
+in the stampede options. A callback takes the pid of a process
+that stampede selected for killing, and must return either
+`true` to allow the kill, or `false` to tell stampede to
+propose another process.
+
+=== Callback generators
+
+As some callback functions are often needed, the `stampede_callbacks`
+module contains generators that will return an appropriate function.
+
+`if_any() -> fun((pid()) -> true)`::
+
+Creates a function that always returns `true`. This is the default
+before-kill callback.
+
+`if_supervisor() -> fun((pid()) -> boolean())`::
+
+Creates a function that returns `true` if the pid given to it is
+a standard OTP supervisor, otherwise `false`.
+
+`if_module([module()]) -> fun((pid()) -> boolean())`::
+
+Creates a function that returns `true` if the initial call of the
+process identified by the pid was through any of the given
+modules, otherwise `false`.
+
+`if_child(pos_integer() | infinity, pid() | atom()) -> fun((pid()) -> boolean())`::
+
+Creates a function that returns `true` if the process identified
+by the pid is in the tree of the given supervisor, to the given
+depth, otherwise `false`.
+
+`if_not(fun((pid()) -> boolean())) -> fun((pid()) -> boolean())`::
+
+Returns a function that negates the result of the given function.
+
+=== Custom callbacks
+
+If you need even more sophisticated control, or want to combine
+some of the generated ones, you may also roll your own.
+
+.Example callback targeting supervisors or the `my_module` module
+
+[source,erlang]
+----
+MyCallback=fun (Pid) ->
+	(stampede_callbacks:if_supervisor())(Pid)
+	orelse (stampede_callbacks:if_module([my_module]))(Pid)
+end.
+----
+
+.Example callback to exclude processes registered as `my_registered_process`
+
+[source,erlang]
+----
+MyCallback=fun (Pid) ->
+	Pid=:=whereis(my_registered_process)
+end.
+----
+
+Custom callbacks can also be used to log what stampede is about to kill.
+
+.Example callback to log the process info of the pid to be killed
+
+[source,erlang]
+----
+MyCallback=fun (Pid) ->
+	logger:info("Killing ~p~n~p", [Pid, erlang:process_info(Pid)]),
+	true
+end.
+----

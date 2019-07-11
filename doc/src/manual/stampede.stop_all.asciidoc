@@ -1,0 +1,24 @@
+= stampede:stop_herd(3)
+
+== Name
+
+stampede:stop_all - Stop all stampedes
+
+== Description
+
+[source,erlang]
+----
+stop_all()
+    -> ok
+----
+
+Stop all running stampedes.
+
+== Return value
+
+The atom `ok` is always returned.
+
+== See also
+
+link:man:stampede:stop_herd(3)[stampede:stop_herd(3)]
+link:man:stampede:start_herd(3)[stampede:start_herd(3)]

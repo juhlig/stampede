@@ -1,0 +1,88 @@
+== Usage
+
+=== Prerequisites
+
+First you need to start the `stampede` application
+itself.
+
+.Start the `stampede` application
+
+[source,erlang]
+----
+ok=application:start(stampede).
+----
+
+Before you can start stampeding a target application, that
+application must be running.
+
+.Start the `my_app` application
+
+[source,erlang]
+----
+{ok, _}=application:ensure_all_started(my_app).
+----
+
+=== Starting stampedes
+
+Now you can run a stampede on the target application.
+
+.Start stampeding the `my_app` application
+
+[source,erlang]
+----
+{ok, _}=stampede:start_herd(my_app).
+----
+
+This will stampede the target application with default options,
+which is one kill in 5 seconds, and any process belonging to it
+being killable.
+
+By specifying custom options, you may change the kill interval and
+also influence what is being killed and what is not with a custom
+before-kill callback. The `stampede_callbacks` module has functions
+to generate some often needed callback functions.
+
+.Start stampeding the `my_app` application with a 1-2s interval and exclude supervisors
+
+[source,erlang]
+----
+NotIfSup=stampede_callbacks:if_not(stampede_callbacks:if_supervisor()).
+{ok, _}=stampede:start_herd(my_app, #{interval => {1000, 2000}, before_kill => NotIfSup}).
+----
+
+It is also possible to stampede multiple applications in parallel. Just
+start a stampede for any application you want to target.
+
+.Start stampeding the `my_app` and `my_other_app` applications
+
+[source,erlang]
+----
+{ok, _}=stampede:start_herd(my_app),
+{ok, _}=stampede:start_herd(my_other_app).
+----
+
+=== Stopping stampedes
+
+When you decide you have stampeded the target application enough, you may stop
+the stampede targeting it.
+
+.Stop stampeding the `my_app` application
+
+[source,erlang]
+----
+ok=stampede:stop_herd(my_app).
+----
+
+If you have multiple stampedes running, it is also possible to stop them all at once.
+
+.Stop all stampedes
+
+[source,erlang]
+----
+ok=stampede:stop_all().
+----
+
+If the top supervisor of a targeted application exits, the stampede targeting it will
+crash. While stampede itself will not kill the top supervisor of the targeted
+application, it may still crash due to their restart limits being reached as an effect
+of their child processes being killed too fast by a stampede.

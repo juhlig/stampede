@@ -1,2 +1,0 @@
-# stampede
-Application Resilience Testing

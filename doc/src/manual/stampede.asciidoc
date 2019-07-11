@@ -1,0 +1,47 @@
+= stampede(3)
+
+== Name
+
+stampede - Erlang Resilience Testing
+
+== Description
+
+The `stampede` module provides functions for starting and
+stopping the killing of application processes.
+
+== Exports
+
+* link:man:stampede:start_herd(3)[stampede:start_herd(3)] - Start a stampede
+* link:man:stampede:stop_herd(3)[stampede:stop_herd(3)] - Stop a stampede
+* link:man:stampede:stop_all(3)[stampede:stop_all(3)] - Stop all stampedes
+
+== Types
+
+[source,erlang]
+----
+opts() = #{
+	interval => {non_neg_integer(), non_neg_integer()},
+	before_kill => fun((pid()) -> boolean())
+}
+----
+
+Stampede options.
+
+The options control the behavior of the stampede.
+
+None of the stampede options is required.
+
+interval ({5000, 5000}) ::
+
+Minimum and Maximum time between kills.
+
+before_kill (fun (_) -> true end) ::
+
+Function to be called before each kill, with the Pid of a process that is
+a candidate for being killed. It must return either `true` to allow the
+killing of this process, or `false` to disallow it. This enables the user
+to exert fine-grained control over the stampede, do some logging, etc.
+
+== See also
+
+link:man:stampede_callbacks(3)[stampede_callbacks(3)] - Callback generators

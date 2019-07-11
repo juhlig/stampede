@@ -1,0 +1,16 @@
+= stampede(7)
+
+== Name
+
+stampede - Application Resilience Testing
+
+== Description
+
+Stampede is a resilience testing tool for Erlang applications.
+
+When started, stampede will start tracing the target application
+in order to keep track of the processes belonging to it,
+and randomly kill those processes with a definable intensity.
+
+Fine-grained control over what to really kill and what not can
+be achieved with user-defined callbacks.

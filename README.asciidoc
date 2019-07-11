@@ -1,0 +1,29 @@
+= stampede
+
+Application Resilience Testing
+
+Stampede targets the processes of a given application and
+will randomly kill processes that belong to it, with a
+definable intensity.
+
+Fine-grained control over what to really kill can be achieved
+with user-defined callbacks.
+
+== Example
+
+[source,erlang]
+----
+%% Start the stampede application
+ok=application:start(stampede).
+
+%% The target application must be running
+{ok, _}=application:ensure_all_started(my_app).
+
+%% Start stampede
+{ok, _}=stampede:start_herd(my_app).
+
+%% ... Wait and see what happens ...
+
+%% Stop stampede
+ok=stampede:stop_herd(my_app).
+----

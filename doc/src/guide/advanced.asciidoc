@@ -1,0 +1,42 @@
+== Advanced Topics
+
+=== Preventing the top supervisor of the target application from crashing
+
+If the top supervisor of the targeted application is sensitive to fast restarts
+of its children, it may crash and take the application down while the application
+is stampeded. Usually, you don't want that to happen, as you want to see how this
+or another related application behaves when processes crash.
+
+However, the restart frequencies are not adjustable, as they tend to be hardcoded
+into the supervisors. A way to nevertheless achieve this on a running supervisor
+is via `sys:replace_state/{2,3}`.
+
+.Adjusting the restart intensity and period of a running supervisor
+
+[source,erlang]
+----
+StateReplace=fun (Old) -> setelement(7, setelement(6, Old, 999999), 1) end,
+sys:replace_state(TopSup, StateReplace).
+----
+
+This will set the restart frequency of the supervisor `TopSup` to 999999 restarts
+in 1 second, which should be enough to ensure it doesn't go down in response
+to child restarts.
+
+=== Dealing with short-lived processes
+
+If the targeted application spawns many short-lived processes, they may already be
+gone when they are about to be killed. By default, stampede does not check if a pid
+it is about to kill is actually alive, and so may end up killing processes which are
+already dead, ie it will rarely kill anything useful. In such a case,
+`erlang:is_process_alive/1` may be used in the before-kill callback to reduce the
+noise.
+
+=== Very short killing intervals
+
+If the interval between kills is very short or even `0`, it may happen that processes
+are already killed while they are being started (ie, in the `init` phase of OTP behaviors),
+especially if the targeted application consist only of a small number of processes.
+
+If that is not what you want, just set a higher interval between kills, or modulate by
+means of the before-kill callback.

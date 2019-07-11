@@ -1,0 +1,32 @@
+= stampede:stop_herd(3)
+
+== Name
+
+stampede:stop_herd - Stop a stampede
+
+== Description
+
+[source,erlang]
+----
+stop_herd(App :: atom())
+    -> ok | {error, term()}
+----
+
+Stop stampeding the specified application.
+
+== Arguments
+
+App::
+
+The target application.
+
+== Return value
+
+The atom `ok` is returned on success.
+
+An `error` tuple is returned on error, the reason may be any term.
+
+== See also
+
+link:man:stampede:stop_all(3)[stampede:stop_all(3)]
+link:man:stampede:start_herd(3)[stampede:start_herd(3)]

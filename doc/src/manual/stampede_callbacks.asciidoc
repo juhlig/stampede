@@ -1,0 +1,59 @@
+= stampede_callbacks(3)
+
+== Name
+
+stampede_callbacks - Callback generators
+
+== Description
+
+The `stampede_callbacks` module provides functions for generating
+often-needed callbacks for the `before_kill` option.
+
+[source,erlang]
+----
+if_any()
+    -> fun((pid()) -> true)
+----
+
+Create a function that always returns `true`.
+
+[source,erlang]
+----
+if_supervisor()
+    -> fun((pid()) -> boolean())
+----
+
+Create a function that returns `true` if the given pid is a
+supervisor, `false` otherwise.
+
+[source,erlang]
+----
+if_module(Modules :: [module()])
+    -> fun((pid()) -> boolean())
+----
+
+Create a function that returns `true` if the initial call of the
+process identified by the given pid was made to any of the given
+modules, `false` otherwise. 
+
+[source,erlang]
+----
+if_child(Depth :: (pos_integer() | infinity),
+         Supervisor :: supervisor:sup_ref())
+    -> fun((pid()) -> boolean())
+----
+
+Create a function that returns `true` if the given pid is under the
+tree of the given supervisor, down to the given depth, otherwise `false`.
+
+[source,erlang]
+----
+if_not(Fun :: fun((pid()) -> boolean()))
+    -> fun((pid()) -> boolean()).
+----
+
+Create a function that negates the result of the given function.
+
+== See also
+
+link:man:stampede:start_herd(3)[stampede:start_herd(3)]

@@ -1,0 +1,72 @@
+= stampede:start_herd(3)
+
+== Name
+
+stampede:start_herd - Start a stampede
+
+== Description
+
+[source,erlang]
+----
+stampede:start_herd(App  :: atom(),
+                    Opts :: stampede:opts())
+    -> supervisor:startchild_ret()
+----
+
+Start stampeding the specified application with the given options.
+
+[source,erlang]
+----
+stampede:start_herd(App  :: atom())
+    -> supervisor:startchild_ret()
+----
+
+Start stampeding the specified application with default options.
+
+== Arguments
+
+App::
+
+The target application, which must be running and not be a library
+application.
+
+Opts::
+
+Options controlling the behavior of the stampede. The available
+options are documented in link:man:stampede(3)[stampede(3)].
+
+== Return value
+
+An `ok` tuple is returned on success, containing the pid of the
+top-level supervisor of the stampede.
+
+An `error` tuple is returned on error, the reason may be any term.
+
+== Examples
+
+.Stampede the `my_app` application with the default options
+
+[source,erlang]
+----
+{ok, _}=stampede:start_herd(ssl).
+----
+
+.Stampede the `my_app` application with a 0.1s interval between kills
+
+[source,erlang]
+----
+{ok, _}=stampede:start_herd(ssl, #{interval => {100, 100}}).
+----
+
+.Stampede the `my_app` application but exclude supervisors
+
+[source,erlang]
+----
+NotIfSup=tampede_callbacks:if_not(stampede_callbacks:if_supervisor())),
+{ok, _}=stampede:start_herd(ssl, #{before_kill => NotIfSup}).
+----
+
+== See also
+
+link:man:stampede:stop_herd(3)[stampede:stop_herd(3)]
+link:man:stampede_callbacks(3)[stampede_callbacks(3)]
