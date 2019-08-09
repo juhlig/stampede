@@ -2,9 +2,8 @@
 
 Application Resilience Testing
 
-Stampede targets the processes of a given application and
-will randomly kill processes that belong to it, with a
-definable intensity.
+Stampede targets and randomly kills the processes belonging
+to a given application or supervisor, with a definable intensity.
 
 Fine-grained control over what to really kill can be achieved
 with user-defined callbacks.
@@ -20,10 +19,10 @@ ok=application:start(stampede).
 {ok, _}=application:ensure_all_started(my_app).
 
 %% Start stampede
-{ok, _}=stampede:start_herd(my_app).
+{ok, _}=stampede:start_herd(my_stampede, {application, my_app}).
 
 %% ... Wait and see what happens ...
 
 %% Stop stampede
-ok=stampede:stop_herd(my_app).
+ok=stampede:stop_herd(my_stampede).
 ----

@@ -16,20 +16,20 @@
 
 -behavior(gen_server).
 
--export([start_link/3]).
+-export([start_link/2]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
--record(state, {app, top_sup, tab}).
+-record(state, {top_sup, tab}).
 
--spec start_link(atom(), pid(), ets:tab()) -> {ok, pid()}.
-start_link(App, TopSup, Tab) ->
-	{ok, Pid}=gen_server:start_link(?MODULE, {App, TopSup}, []),
+-spec start_link(pid(), ets:tab()) -> {ok, pid()}.
+start_link(TopSup, Tab) ->
+	{ok, Pid}=gen_server:start_link(?MODULE, TopSup, []),
 	ets:give_away(Tab, Pid, stampede),
 	{ok, Pid}.
 
-init({App, TopSup}) ->
+init(TopSup) ->
 	Monitor=monitor(process, TopSup),
-	{ok, #state{app=App, top_sup={TopSup, Monitor}}}.
+	{ok, #state{top_sup={TopSup, Monitor}}}.
 
 handle_call(_, _, State) ->
 	{noreply, State}.
@@ -37,9 +37,8 @@ handle_call(_, _, State) ->
 handle_cast(_, State) ->
 	{noreply, State}.
 
-handle_info({'ETS-TRANSFER', Tab, _, stampede}, State=#state{app=App, top_sup={TopSup, _}}) ->
-	ok=collect(App, TopSup, Tab),
-	gen_server:cast(self(), kill_something),
+handle_info({'ETS-TRANSFER', Tab, _, stampede}, State=#state{top_sup={TopSup, _}}) ->
+	ok=collect(TopSup, Tab),
 	{noreply, State#state{tab=Tab}};
 handle_info({'DOWN', Ref, process, Pid, _}, State=#state{top_sup={Pid, Ref}}) ->
 	{stop, {top_supervisor_exited, Pid}, State};
@@ -58,10 +57,9 @@ terminate(_, _) ->
 code_change(_, State, _) ->
 	{ok, State}.
 
-collect(App, TopSup, Tab) ->
+collect(TopSup, Tab) ->
 	true = trace_proc(TopSup),
 	collect_trace_hierarchy(TopSup, Tab),
-	collect_trace_sequence(App, TopSup, Tab),
 	ok.
 
 collect_trace_hierarchy(Sup, Tab) ->
@@ -87,10 +85,6 @@ collect_trace_hierarchy(Sup, Tab) ->
 		exit:{noproc, _} ->
 			ok
 	end.
-
-collect_trace_sequence(App, TopSup, Tab) ->
-	_ = [collect_trace_proc(Pid, Tab) || Pid <- erlang:processes(), Pid>TopSup, {ok, App}=:=application:get_application(Pid)],
-	ok.
 
 collect_trace_proc(Pid, Tab) ->
 	case trace_proc(Pid) of

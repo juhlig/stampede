@@ -4,29 +4,31 @@ A stampede consists of two components, the tracer and the herd.
 
 === Tracer
 
-The tracer keeps track of the processes of the target application.
+The tracer keeps track of the processes of the target application
+or supervisor.
 
 When started, it will start tracing process-related events of the
-application top supervisor, and set the `set_on_spawn` flag so
-processes spawned by it from then on are also traced.
+target supervisor or the top supervisor of the target application,
+and set the `set_on_spawn` flag so processes spawned by it from then
+on are also traced.
 
-Next, it will explore the supervision tree of the top supervisor
+Next, it will explore the supervision tree of the that supervisor
 and set up the same tracing for them. After this, any processes
 spawned by processes in the supervison tree are automatically
 traced.
 
-There may still be some unsupervised processes left untraced, so
-the final step is to explore all processes with a pid higher
-than the top supervisor's, and trace them if they belong to
-the target application. This step is on a best-effort basis,
-some of the unsupervised processes may still be left untraced.
-But since unsupervised processes are supposedly short-lived,
-it is usually of little consequence.
+The above process leaves unsupervised processes started by the
+target application or supervisor untraced. This is usually of
+no consequence, as those are supposedly temporary and short-lived.
+In the course of events, such processes will be included in the
+stampede, as they are being traced when started from a traced
+process.
 
 Along the way, the tracer also collects the pids of the processes
-it traces (except the top supervisor) in an `ets` table. This table
-is forthwith updated as trace messages pour in, adding newly spawned
-processes and removing the exited ones.
+it traces (except the target supervisor or the target application
+top supervisor) in an `ets` table. This table is forthwith updated
+as trace messages pour in, adding newly spawned processes and
+removing the exited ones.
 
 The tracer also establishes a monitor on the top supervisor. When
 it exits, the tracer will crash as well, as there is no point
@@ -37,7 +39,8 @@ in continuing the stampede.
 The herd does the actual stampeding.
 
 It will fetch the list of target pids maintained by the associated
-tracer, shuffle it, then use the callback function on the pids to
+tracer, shuffle it, then use the callback function on those pids
 until it has found one it is allowed to kill, and kill it forthwith.
 +
-Then it sets a timer to repeat the above process after a while.
+Then it sets a timer to repeat the above process after a while,
+depending on the specified intensity.

@@ -16,24 +16,15 @@
 
 -behavior(supervisor).
 
--export([start_link/1, start_link/2]).
+-export([start_link/2]).
 -export([init/1]).
+-export([get_top_sup/1]).
 
-start_link(App) ->
-	start_link(App, #{}).
+-spec start_link(pid(), stampede:opts()) -> {ok, pid()}.
+start_link(TopSup, Opts) ->
+	supervisor:start_link(?MODULE, {TopSup, Opts}).
 
-start_link(App, Opts) ->
-	supervisor:start_link(?MODULE, {App, Opts}).
-
-init({App, Opts}) ->
-	case get_top_sup(App) of
-		{ok, TopSup} ->
-			init1(App, TopSup, Opts);
-		{error, Error} ->
-			{stop, Error}
-	end.
-
-init1(App, TopSup, Opts) ->
+init({TopSup, Opts}) ->
 	Tab = ets:new(?MODULE, []),
 	{
 		ok,
@@ -45,7 +36,7 @@ init1(App, TopSup, Opts) ->
 			[
 				#{
 					id => stampede_tracer,
-					start => {stampede_tracer, start_link, [App, TopSup, Tab]},
+					start => {stampede_tracer, start_link, [TopSup, Tab]},
 					shutdown => brutal_kill
 				},
 				#{
@@ -56,7 +47,6 @@ init1(App, TopSup, Opts) ->
 			]
 		}
 	}.
-
 
 get_top_sup(App) ->
         AppInfo=application:info(),
