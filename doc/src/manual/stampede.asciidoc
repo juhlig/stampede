@@ -7,7 +7,8 @@ stampede - Erlang Resilience Testing
 == Description
 
 The `stampede` module provides functions for starting and
-stopping the killing of application processes.
+stopping the killing of processes belonging to a given
+application or supervisor.
 
 == Exports
 

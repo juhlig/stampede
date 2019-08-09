@@ -2,20 +2,20 @@
 
 Stampede is an application resilience testing tool.
 
-It will kill random processes of the targeted applications. Fine-grained
-control over what really may and may not be killed can be achieved with
-user-defined callbacks.
+It will kill random processes of the targeted supervisor of application.
+Fine-grained control over what really may and may not be killed can be
+achieved with user-defined callbacks.
 
 === Limitations
 
-* Only individual applications can be targeted, not an entire Erlang system.
+* Only individual applications or supervisors can be targeted, not an entire Erlang system.
 * Only "real" applications can be targeted, not library applications.
-* Only local applications can be targeted, ie applications whose top supervisor
-  runs on the same node as stampede.
-* Only processes are targeted, not ports, as their relation to an
-  application is uncertain.
+* Only local applications and supervisors can be targeted, ie running on the same node
+  as stampede does.
+* Only processes are targeted, not ports, as their relation to an application or supervisor
+  is uncertain.
 * Only local processes are targeted, even if they are started by
-  a local application but on another node.
+  a local application or supervisor, but on another node.
 
 === Environment
 

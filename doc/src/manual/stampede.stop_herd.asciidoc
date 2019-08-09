@@ -8,7 +8,7 @@ stampede:stop_herd - Stop a stampede
 
 [source,erlang]
 ----
-stop_herd(App :: atom())
+stop_herd(Ref :: ref())
     -> ok | {error, term()}
 ----
 
@@ -16,9 +16,9 @@ Stop stampeding the specified application.
 
 == Arguments
 
-App::
+Ref::
 
-The target application.
+The stampede identifier given to `start_herd`.
 
 == Return value
 

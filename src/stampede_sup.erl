@@ -17,7 +17,7 @@
 -behaviour(supervisor).
 
 -export([start_link/0]).
--export([start_herd/2]).
+-export([start_herd/3]).
 -export([stop_herd/1, stop_all/0]).
 -export([init/1]).
 
@@ -25,21 +25,21 @@
 start_link() ->
 	supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
--spec start_herd(atom(), stampede:opts()) -> supervisor:startchild_ret().
-start_herd(App, Opts) ->
+-spec start_herd(stampede:ref(), pid(), stampede:opts()) -> supervisor:startchild_ret().
+start_herd(Ref, TopSup, Opts) ->
 	supervisor:start_child(
 		?MODULE,
 		#{
-			id => {stampede_herd, App},
-			start => {stampede_herd_sup, start_link, [App, Opts]},
+			id => {stampede_herd, Ref},
+			start => {stampede_herd_sup, start_link, [TopSup, Opts]},
 			restart => temporary,
 			type => supervisor
 		}
 	).
 
--spec stop_herd(atom()) -> ok | {error, term()}.
-stop_herd(App) ->
-	supervisor:terminate_child(?MODULE, {stampede_herd, App}).
+-spec stop_herd(stampede:ref()) -> ok | {error, term()}.
+stop_herd(Ref) ->
+	supervisor:terminate_child(?MODULE, {stampede_herd, Ref}).
 
 -spec stop_all() -> ok.
 stop_all() ->

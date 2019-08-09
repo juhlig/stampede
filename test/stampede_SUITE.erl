@@ -29,19 +29,41 @@ init_per_suite(Config) ->
 end_per_suite(_) ->
 	ok.
 
-init_per_testcase(_, Config) ->
+init_per_testcase(stampede_application, Config) ->
 	application:start(stampede_test),
+	Config;
+init_per_testcase(stampede_supervisor, Config) ->
+	stampede_test_sup_sup:start_link(),
+	Config;
+init_per_testcase(_, Config) ->
 	Config.
 
-end_per_testcase(_, _) ->
+end_per_testcase(stampede_application, _) ->
 	application:stop(stampede_test),
+	ok;
+end_per_testcase(stampede_supervisor, _) ->
+	catch exit(whereis(stampede_test_sup_sup), shutdown),
+	ok;
+end_per_testcase(_, _) ->
 	ok.
 
-stampede(_) ->
+stampede_application(_) ->
 	doc("Ensure that an application is stampeded and all processes are dead."),
 	Self=self(),
 	ReportFun=fun (Pid) -> Self ! {killing, Pid}, true end,
-	{ok, _}=stampede:start_herd(stampede_test, #{interval => {100, 100}, before_kill => ReportFun}),
+	{ok, _}=stampede:start_herd(stampede_test, {application, stampede_test}, #{interval => {100, 100}, before_kill => ReportFun}),
+	timer:sleep(10000),
+	ok=stampede:stop_herd(stampede_test),
+	Killed=do_receive_loop(),
+	true=length(Killed)>0,
+	false=lists:any(fun (Pid) -> erlang:is_process_alive(Pid) end, Killed),
+	ok.
+
+stampede_supervisor(_) ->
+	doc("Ensure that a supervisor is stampeded and all processes are dead."),
+	Self=self(),
+	ReportFun=fun (Pid) -> Self ! {killing, Pid}, true end,
+	{ok, _}=stampede:start_herd(stampede_test, {supervisor, stampede_test_sup_sup}, #{interval => {100, 100}, before_kill => ReportFun}),
 	timer:sleep(10000),
 	ok=stampede:stop_herd(stampede_test),
 	Killed=do_receive_loop(),

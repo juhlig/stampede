@@ -8,27 +8,32 @@ stampede:start_herd - Start a stampede
 
 [source,erlang]
 ----
-stampede:start_herd(App  :: atom(),
-                    Opts :: stampede:opts())
+stampede:start_herd(Ref    :: ref()
+                    Target :: target(),
+                    Opts   :: opts())
     -> supervisor:startchild_ret()
 ----
 
-Start stampeding the specified application with the given options.
+Start stampeding the specified application or supervisor with the given options.
 
 [source,erlang]
 ----
-stampede:start_herd(App  :: atom())
+stampede:start_herd(Ref    :: term(),
+                    Target :: target())
     -> supervisor:startchild_ret()
 ----
 
-Start stampeding the specified application with default options.
+Start stampeding the specified application or supervisor with default options.
 
 == Arguments
 
-App::
+Ref::
 
-The target application, which must be running and not be a library
-application.
+An identifier for the stampede.
+
+Target::
+
+The target application or supervisor.
 
 Opts::
 
@@ -42,28 +47,30 @@ top-level supervisor of the stampede.
 
 An `error` tuple is returned on error, the reason may be any term.
 
+An `error` exception is generated if the target application is not running
+or is a library application, or if the target supervisor is not running.
+
 == Examples
 
-.Stampede the `my_app` application with the default options
+.Stampede the `my_app` application with default options
 
 [source,erlang]
 ----
-{ok, _}=stampede:start_herd(ssl).
+{ok, _}=stampede:start_herd(my_stampede, {application, my_app}).
 ----
 
 .Stampede the `my_app` application with a 0.1s interval between kills
 
 [source,erlang]
 ----
-{ok, _}=stampede:start_herd(ssl, #{interval => {100, 100}}).
+{ok, _}=stampede:start_herd(my_stampede, {application, my_app}, #{interval => {100, 100}}).
 ----
 
-.Stampede the `my_app` application but exclude supervisors
+.Stampede the supervisor registered as `my_sup` with default options
 
 [source,erlang]
 ----
-NotIfSup=tampede_callbacks:if_not(stampede_callbacks:if_supervisor())),
-{ok, _}=stampede:start_herd(ssl, #{before_kill => NotIfSup}).
+{ok, _}=stampede:start_herd(my_stampede, {supervisor, my_sup}).
 ----
 
 == See also
