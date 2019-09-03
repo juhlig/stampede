@@ -34,6 +34,9 @@ An identifier for the stampede.
 Target::
 
 The target application or supervisor.
++
+* If the target is an application, it must be given as `{application, AppName}`.
+* If the target is a supervisor, it must be given as `{supervisor, SupRef}`.
 
 Opts::
 

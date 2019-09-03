@@ -18,7 +18,7 @@
 -compile(nowarn_export_all).
 
 -import(ct_helper, [doc/1]).
--import(stampede_test_helper, [collect_pids/0]).
+-import(stampede_test_helper, [collect_pids/0, collect_ports/0]).
 
 all() ->
 	ct_helper:all(?MODULE).
@@ -30,8 +30,40 @@ init_per_suite(Config) ->
 end_per_suite(_) ->
 	application:stop(stampede_test).
 
+cb_if_anyof(_) ->
+	doc("Ensure that the if_anyof callback works"),
+	CbGen=fun (Res1, Res2) -> stampede_callbacks:if_anyof([fun (_) -> Res1 end, fun (_) -> Res2 end]) end,
+	Pids=collect_pids(),
+	true=lists:all(
+		fun
+			({_, _, _, Pid}) ->
+				(CbGen(true, true))(Pid) andalso
+				(CbGen(true, false))(Pid) andalso
+				(CbGen(false, true))(Pid) andalso
+				not (CbGen(false, false))(Pid)
+		end,
+		Pids
+	),
+	ok.
+
+cb_if_allof(_) ->
+	doc("Ensure that the if_allof callback works"),
+	CbGen=fun (Res1, Res2) -> stampede_callbacks:if_allof([fun (_) -> Res1 end, fun (_) -> Res2 end]) end,
+	Pids=collect_pids(),
+	true=lists:all(
+		fun
+			({_, _, _, Pid}) ->
+				(CbGen(true, true))(Pid) andalso
+				not (CbGen(true, false))(Pid) andalso
+				not (CbGen(false, true))(Pid) andalso
+				not (CbGen(false, false))(Pid)
+		end,
+		Pids
+	),
+	ok.
+
 cb_if_not(_) ->
-	doc(""),
+	doc("Ensure that the if_not callback works."),
 	Cb=stampede_callbacks:if_not(fun (_) -> false end),
 	Pids=collect_pids(),
 	true=lists:all(
@@ -40,6 +72,38 @@ cb_if_not(_) ->
 				Cb(Pid)
 		end,
 		Pids
+	),
+	ok.
+
+cb_if_process(_) ->
+	doc("Ensure that the if_process callback works."),
+	Cb=stampede_callbacks:if_process(),
+	Pids=collect_pids(),
+	Ports=collect_ports(),
+	true=lists:all(
+		fun
+			({_, _, _, Pid}) ->
+				Cb(Pid);
+			(Port) ->
+				not Cb(Port)
+		end,
+		Pids++Ports
+	),
+	ok.
+
+cb_if_port(_) ->
+	doc("Ensure that the if_port callback works."),
+	Cb=stampede_callbacks:if_port(),
+	Pids=collect_pids(),
+	Ports=collect_ports(),
+	true=lists:all(
+		fun
+			({_, _, _, Pid}) ->
+				not Cb(Pid);
+			(Port) ->
+				Cb(Port)
+		end,
+		Pids++Ports
 	),
 	ok.
 
@@ -132,5 +196,77 @@ cb_if_child_subsup(_) ->
 				not Cb(Pid)
 		end,
 		Pids
+	),
+	ok.
+
+cb_if_portname(_) ->
+	doc("Ensure that the if_portname callback works"),
+	Cb=stampede_callbacks:if_portname("tcp_inet"),
+	Ports=collect_ports(),
+	true=lists:all(
+		fun
+			(Port) ->
+				case erlang:port_info(Port, name) of
+					{name, "tcp_inet"} ->
+						Cb(Port);
+					_ ->
+						not Cb(Port)
+				end
+		end,
+		Ports
+	),
+	ok.
+
+cb_if_portinfo(_) ->
+	doc("Ensure that the if_portinfo callback works"),
+	Cb=stampede_callbacks:if_portinfo(name, "tcp_inet"),
+	Ports=collect_ports(),
+	true=lists:all(
+		fun
+			(Port) ->
+				case erlang:port_info(Port, name) of
+					{name, "tcp_inet"} ->
+						Cb(Port);
+					_ ->
+						not Cb(Port)
+				end
+		end,
+		Ports
+	),
+	ok.
+
+cb_if_tcp(_) ->
+	doc("Ensure that the if_tcp callback works."),
+	Cb=stampede_callbacks:if_tcp(),
+	Ports=collect_ports(),
+	true=lists:all(
+		fun
+			(Port) ->
+				case erlang:port_info(Port, name) of
+					{name, "tcp_inet"} ->
+						Cb(Port);
+					_ ->
+						not Cb(Port)
+				end
+		end,
+		Ports
+	),
+	ok.
+
+cb_if_udp(_) ->
+	doc("Ensure that the if_udp callback works."),
+	Cb=stampede_callbacks:if_udp(),
+	Ports=collect_ports(),
+	true=lists:all(
+		fun
+			(Port) ->
+				case erlang:port_info(Port, name) of
+					{name, "udp_inet"} ->
+						Cb(Port);
+					_ ->
+						not Cb(Port)
+				end
+		end,
+		Ports
 	),
 	ok.

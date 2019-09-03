@@ -2,7 +2,7 @@
 
 Application Resilience Testing
 
-Stampede targets and randomly kills the processes belonging
+Stampede targets and randomly kills the processes and ports belonging
 to a given application or supervisor, with a definable intensity.
 
 Fine-grained control over what to really kill can be achieved

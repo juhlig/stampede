@@ -25,9 +25,16 @@
 	        | {supervisor, pid() | atom()}.
 -export_type([target/0]).
 
+-type interval() :: {non_neg_integer(), non_neg_integer()}.
+-export_type([interval/0]).
+
+-type callback() :: fun((pid() | port()) -> boolean()).
+-export_type([callback/0]).
+
 -type opts() :: #{
-		interval => {non_neg_integer(), non_neg_integer()},
-		before_kill => {fun((pid(), term()) -> boolean()), term()}}.
+		interval => interval(),
+		before_kill => callback()
+	}.
 -export_type([opts/0]).
 
 -spec start_herd(ref(), target()) -> supervisor:startchild_ret().

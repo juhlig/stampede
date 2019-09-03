@@ -39,10 +39,10 @@ handle_info(kill_something, State=#state{tab=Tab, killer=undefined, opts=#{befor
 	Monitor=spawn_monitor(
 		fun () ->
 			lists:any(
-				fun ({Pid}) ->
-					case Fun(Pid) of
+				fun ({PidOrPort}) ->
+					case Fun(PidOrPort) of
 						true ->
-							exit(Pid, kill),
+							exit(PidOrPort, kill),
 							true;
 						false ->
 							false
