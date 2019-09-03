@@ -22,6 +22,8 @@ start_link() ->
 	gen_server:start_link(?MODULE, [], []).
 
 init([]) ->
+	gen_tcp:listen(0, [{active, false}]),
+	gen_udp:open(0, [{active, false}]),
 	{ok, []}.
 
 handle_call(_, _, State) ->

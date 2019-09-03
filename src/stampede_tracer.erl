@@ -42,11 +42,22 @@ handle_info({'ETS-TRANSFER', Tab, _, stampede}, State=#state{top_sup={TopSup, _}
 	{noreply, State#state{tab=Tab}};
 handle_info({'DOWN', Ref, process, Pid, _}, State=#state{top_sup={Pid, Ref}}) ->
 	{stop, {top_supervisor_exited, Pid}, State};
-handle_info({trace, Pid, spawned, _, _}, State=#state{tab=Tab}) ->
+handle_info({trace, Pid, spawned, _, _}, State=#state{tab=Tab}) when is_pid(Pid) ->
 	ets:insert(Tab, {Pid}),
 	{noreply, State};
-handle_info({trace, Pid, exit, _}, State=#state{tab=Tab}) ->
-	ets:delete_object(Tab, {Pid}),
+handle_info({trace, Pid, exit, _}, State=#state{tab=Tab}) when is_pid(Pid) ->
+	ets:delete(Tab, Pid),
+	{noreply, State};
+handle_info({trace, _, link, Port}, State=#state{tab=Tab}) when is_port(Port) ->
+	case erlang:port_info(Port, connected) of
+		{connected, Pid} when Pid=:=self() ->
+			collect_trace(Port, Tab);
+		_ ->
+			ok
+	end,
+	{noreply, State};
+handle_info({trace, Port, closed, _}, State=#state{tab=Tab}) when is_port(Port) ->
+	ets:delete(Tab, Port),
 	{noreply, State};
 handle_info(_, State) ->
 	{noreply, State}.
@@ -58,11 +69,12 @@ code_change(_, State, _) ->
 	{ok, State}.
 
 collect(TopSup, Tab) ->
-	true = trace_proc(TopSup),
-	collect_trace_hierarchy(TopSup, Tab),
+	true = trace(TopSup),
+	collect_trace_children(TopSup, Tab),
+	collect_trace_ports(TopSup, Tab),
 	ok.
 
-collect_trace_hierarchy(Sup, Tab) ->
+collect_trace_children(Sup, Tab) ->
 	try
 		supervisor:which_children(Sup)
 	of
@@ -74,10 +86,10 @@ collect_trace_hierarchy(Sup, Tab) ->
 					({_, restarting, _, _}) ->
 						ok;
 					({_, Pid, supervisor, _}) ->
-						collect_trace_proc(Pid, Tab),
-						collect_trace_hierarchy(Pid, Tab);
+						collect_trace(Pid, Tab),
+						collect_trace_children(Pid, Tab);
 					({_, Pid, worker, _}) ->
-						collect_trace_proc(Pid, Tab)
+						collect_trace(Pid, Tab)
 				end,
 				Children
 			)
@@ -86,18 +98,39 @@ collect_trace_hierarchy(Sup, Tab) ->
 			ok
 	end.
 
-collect_trace_proc(Pid, Tab) ->
-	case trace_proc(Pid) of
+collect_trace_ports(TopSup, Tab) ->
+	lists:foreach(
+		fun (Port) ->
+			case erlang:port_info(Port, connected) of
+				undefined ->
+					ok;
+				{connected, Pid} when Pid=:=TopSup ->
+					collect_trace(Port, Tab);
+				{connected, Pid} ->
+					case ets:member(Tab, Pid) of
+						true ->
+							collect_trace(Port, Tab);
+						false ->
+							ok
+					end
+			end
+		end,
+		erlang:ports()
+	),
+	ok.
+
+collect_trace(PidOrPort, Tab) ->
+	case trace(PidOrPort) of
 		true ->
-			ets:insert(Tab, {Pid});
+			ets:insert(Tab, {PidOrPort});
 		false ->
 			ok
 	end,
 	ok.
 
-trace_proc(Pid) ->
+trace(PidOrPort) when is_pid(PidOrPort); is_port(PidOrPort) ->
 	try
-		1=erlang:trace(Pid, true, [procs, set_on_spawn]),
+		1=erlang:trace(PidOrPort, true, [procs, ports, set_on_spawn]),
 		true
 	catch
 		error:badarg ->

@@ -4,11 +4,11 @@ A stampede consists of two components, the tracer and the herd.
 
 === Tracer
 
-The tracer keeps track of the processes of the target application
-or supervisor.
+The tracer keeps track of the processes and ports of the target
+application or supervisor.
 
-When started, it will start tracing process-related events of the
-target supervisor or the top supervisor of the target application,
+When started, it will start tracing process- and port-related events
+of the target supervisor or the top supervisor of the target application,
 and set the `set_on_spawn` flag so processes spawned by it from then
 on are also traced.
 
@@ -30,6 +30,10 @@ top supervisor) in an `ets` table. This table is forthwith updated
 as trace messages pour in, adding newly spawned processes and
 removing the exited ones.
 
+Finally, all ports are checked to find out if they are connected
+to any of the collected processes, ie if they are belong to the
+targeted application or supervisor.
+
 The tracer also establishes a monitor on the top supervisor. When
 it exits, the tracer will crash as well, as there is no point
 in continuing the stampede.
@@ -38,9 +42,10 @@ in continuing the stampede.
 
 The herd does the actual stampeding.
 
-It will fetch the list of target pids maintained by the associated
-tracer, shuffle it, then use the callback function on those pids
-until it has found one it is allowed to kill, and kill it forthwith.
+It will fetch the list of target pids and ports maintained by the
+associated tracer, shuffle it, then use the callback function on
+those pids and ports until it has found one it is allowed to kill,
+and kill it forthwith.
 +
 Then it sets a timer to repeat the above process after a while,
 depending on the specified intensity.

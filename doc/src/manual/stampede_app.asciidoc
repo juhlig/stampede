@@ -9,8 +9,13 @@ stampede - Application Resilience Testing
 Stampede is a resilience testing tool for Erlang applications.
 
 When started, stampede will start tracing the target application
-or supervisor in order to keep track of the processes belonging to it,
-and randomly kill those processes with a definable intensity.
+or supervisor in order to keep track of the processes and ports
+belonging to it, and randomly kill those processes and ports
+with a definable intensity.
 
 Fine-grained control over what to really kill and what not can
 be achieved with user-defined callbacks.
+
+== Changelog
+
+* *0.3.0*: Added port killing.

@@ -11,48 +11,141 @@ often-needed callbacks for the `before_kill` option.
 
 [source,erlang]
 ----
+if_allof([stampede:callback()])
+    -> stampede:callback()
+----
+
+Create a function that returns `true` if all of the functions given
+to it return `true`, `false` otherwise.
+
+[source,erlang]
+----
+if_anyof([stampede:callback()])
+    -> stampede:callback()
+----
+
+Create a function that returns `true` if any of the functions given
+to it returns `true`, `false` otherwise.
+
+[source,erlang]
+----
 if_any()
-    -> fun((pid()) -> true)
+    -> fun((pid() | port()) -> true)
 ----
 
 Create a function that always returns `true`.
 
 [source,erlang]
 ----
-if_supervisor()
-    -> fun((pid()) -> boolean())
+if_child(Depth :: (pos_integer() | infinity),
+         Supervisor :: supervisor:sup_ref())
+    -> stampede:callback()
 ----
 
-Create a function that returns `true` if the given pid is a
-supervisor, `false` otherwise.
+Create a function that returns `true` if the argument given to it is a
+process identifier for a process that lives under the tree of the given
+supervisor, down to the given depth, otherwise `false`.
 
 [source,erlang]
 ----
 if_module(Modules :: [module()])
-    -> fun((pid()) -> boolean())
+    -> stampede:callback()
 ----
 
-Create a function that returns `true` if the initial call of the
-process identified by the given pid was made to any of the given
+Create a function that returns `true` if the argument given to it
+is a process identifier whose initial call was made to any of the given
 modules, `false` otherwise. 
 
 [source,erlang]
 ----
-if_child(Depth :: (pos_integer() | infinity),
-         Supervisor :: supervisor:sup_ref())
-    -> fun((pid()) -> boolean())
-----
-
-Create a function that returns `true` if the given pid is under the
-tree of the given supervisor, down to the given depth, otherwise `false`.
-
-[source,erlang]
-----
-if_not(Fun :: fun((pid()) -> boolean()))
-    -> fun((pid()) -> boolean()).
+if_not(Fun :: stampede:callback())
+    -> stampede:callback().
 ----
 
 Create a function that negates the result of the given function.
+
+[source,erlang]
+----
+if_port()
+    -> stampede:callback()
+----
+
+Create a function that returns `true` if the argument given to it
+is a port identifier, `false` otherwise.
+
+[source,erlang]
+----
+if_portinfo(Item :: atom(),
+            Value :: term())
+    -> fun(pid() | port()) -> boolean())
+----
+
+Creates a function that returns `true` if the argument given to it
+is a port identifier, and for which the value of the port info item
+specified by `Item` equals the value specified by `Value`, `false`
+otherwise.
+
+[source,erlang]
+----
+if_portname(Name :: term())
+    -> fun(pid() | port()) -> boolean())
+----
+
+Creates a function that returns `true` if the argument given to it
+is a port identifier whose name equals the value specified by `Name`,
+`false` otherwise.
+
+[source,erlang]
+----
+if_process()
+    -> stampede:callback()
+----
+
+Create a function that returns `true` if the argument given to it
+is a process identifier, `false` otherwise.
+
+[source,erlang]
+----
+if_sctp()
+    -> stampede:callback()
+----
+
+Create a function that returns `true` if the argument given to it
+is a port identifier for a SCTP socket, `false` otherwise.
+
+[source,erlang]
+----
+if_supervisor()
+    -> stampede:callback()
+----
+
+Create a function that returns `true` if the argument given to it
+is the process identifier of a supervisor, `false` otherwise.
+
+[source,erlang]
+----
+if_tcp()
+    -> stampede:callback()
+----
+
+Create a function that returns `true` if the argument given to it
+is a port identifier for a TCP socket, `false` otherwise.
+
+[source,erlang]
+----
+if_udp()
+    -> stampede:callback()
+----
+
+Create a function that returns `true` if the argument given to it
+is a port identifier for an UDP socket, `false` otherwise.
+
+== Changelog
+
+* *0.3.0*: The generated callback functions also accept ports now.
+* *0.3.0*: Added  functions `if_allof`, `if_anyof`, `if_port`,
+           `if_process`, `if_port`, `if_portinfo`, `if_portname`,
+           `if_sctp`, `if_tcp` and `if_udp`.
 
 == See also
 

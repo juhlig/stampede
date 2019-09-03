@@ -15,6 +15,7 @@
 -module(stampede_test_helper).
 
 -export([collect_pids/0]).
+-export([collect_ports/0]).
 
 collect_pids() ->
 	Children=supervisor:which_children(stampede_test_sup_sup),
@@ -29,3 +30,17 @@ collect_pids([{Id, Pid, supervisor, [Mod]}|Children], Acc0) ->
 collect_pids([{Id, Pid, worker, [Mod]}|Children], Acc) ->
 	collect_pids(Children, [{Id, Mod, worker, Pid}|Acc]).
 
+collect_ports() ->
+	Pids=[Pid || {_, _, _, Pid} <- collect_pids()],
+	lists:filter(
+		fun
+			(Port) ->
+				case erlang:port_info(Port, connected) of
+					undefined ->
+						false;
+					{connected, Pid} ->
+						lists:member(Pid, Pids)
+				end
+		end,
+		erlang:ports()
+	).

@@ -29,22 +29,18 @@ init_per_suite(Config) ->
 end_per_suite(_) ->
 	ok.
 
-init_per_testcase(stampede_application, Config) ->
-	application:start(stampede_test),
-	Config;
 init_per_testcase(stampede_supervisor, Config) ->
 	stampede_test_sup_sup:start_link(),
 	Config;
 init_per_testcase(_, Config) ->
+	application:start(stampede_test),
 	Config.
 
-end_per_testcase(stampede_application, _) ->
-	application:stop(stampede_test),
-	ok;
 end_per_testcase(stampede_supervisor, _) ->
 	catch exit(whereis(stampede_test_sup_sup), shutdown),
 	ok;
 end_per_testcase(_, _) ->
+	application:stop(stampede_test),
 	ok.
 
 stampede_application(_) ->
@@ -56,7 +52,7 @@ stampede_application(_) ->
 	ok=stampede:stop_herd(stampede_test),
 	Killed=do_receive_loop(),
 	true=length(Killed)>0,
-	false=lists:any(fun (Pid) -> erlang:is_process_alive(Pid) end, Killed),
+	false=lists:any(fun (Pid) when is_pid(Pid) -> erlang:is_process_alive(Pid); (Port) when is_port(Port) -> undefined=/=erlang:port_info(Port) end, Killed),
 	ok.
 
 stampede_supervisor(_) ->
@@ -68,7 +64,21 @@ stampede_supervisor(_) ->
 	ok=stampede:stop_herd(stampede_test),
 	Killed=do_receive_loop(),
 	true=length(Killed)>0,
-	false=lists:any(fun (Pid) -> erlang:is_process_alive(Pid) end, Killed),
+	false=lists:any(fun (Pid) when is_pid(Pid) -> erlang:is_process_alive(Pid); (Port) when is_port(Port) -> undefined=/=erlang:port_info(Port) end, Killed),
+	ok.
+
+stampede_ports(_) ->
+	doc("Ensure that the ports of an application are stampeded and all ports are dead."),
+	Self=self(),
+	PortsOnlyFun=stampede_callbacks:if_port(),
+	ReportFun=fun (Port) -> Self ! {killing, Port}, true end,
+	BeforeKillFun=stampede_callbacks:if_allof([PortsOnlyFun, ReportFun]),
+	{ok, _}=stampede:start_herd(stampede_test, {application, stampede_test}, #{interval => {100, 100}, before_kill => BeforeKillFun}),
+	timer:sleep(10000),
+	ok=stampede:stop_herd(stampede_test),
+	Killed=do_receive_loop(),
+	true=length(Killed)>0,
+	false=lists:any(fun (Port) -> undefined=/=erlang:port_info(Port) end, Killed),
 	ok.
 
 do_receive_loop() ->
@@ -76,8 +86,8 @@ do_receive_loop() ->
 
 do_receive_loop(Acc) ->
 	receive
-		{killing, Pid} ->
-			do_receive_loop([Pid|Acc])
+		{killing, PidOrPort} ->
+			do_receive_loop([PidOrPort|Acc])
 	after 1000 ->
 		Acc
 	end.

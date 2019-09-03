@@ -1,52 +1,103 @@
 == Callbacks
 
-By default, any process belonging to a targeted application
-is a valid target for a stampede and may be killed.
+By default, any process or port belonging to a targeted application
+or supervisor is a valid target for a stampede and may be killed.
 
-You may want to exclude some important processes, however,
-or only target very specific processes of your application.
+You may want to exclude some important processes or ports, however,
+or only target very specific processes or ports of your application
+or supervisor.
 
 This can be achieved by giving a custom before-kill callback
 in the stampede options. A callback takes the pid of a process
-that stampede selected for killing, and must return either
-`true` to allow the kill, or `false` to tell stampede to
-propose another process.
+or a port identifier that stampede selected for killing, and
+must return either `true` to allow the kill, or `false` to tell
+stampede to propose another process or port.
 
 === Callback generators
 
 As some callback functions are often needed, the `stampede_callbacks`
 module contains generators that will return an appropriate function.
 
+`if_anyof([stampede:callback()]) -> stampede:callback()`::
+
+Creates a function that returns `true` if any of the functions given
+to it returns `true`, otherwise `false`.
+
+`if_allof([stampede:callback()]) -> stampede:callback()`::
+
+Creates a function that returns `true` if all of the functions given
+to it return `true`, otherwise `false`.
+
 `if_any() -> fun((pid()) -> true)`::
 
 Creates a function that always returns `true`. This is the default
 before-kill callback.
 
-`if_supervisor() -> fun((pid()) -> boolean())`::
+`if_child(pos_integer() | infinity, pid() | atom()) -> fun((pid()) -> boolean())`::
 
-Creates a function that returns `true` if the pid given to it is
-a standard OTP supervisor, otherwise `false`.
+Creates a function that returns `true` if the argument given to it
+is a process identifier, and the process is in the tree of the given
+supervisor, to the given depth, otherwise `false`.
 
 `if_module([module()]) -> fun((pid()) -> boolean())`::
 
-Creates a function that returns `true` if the initial call of the
-process identified by the pid was through any of the given
-modules, otherwise `false`.
-
-`if_child(pos_integer() | infinity, pid() | atom()) -> fun((pid()) -> boolean())`::
-
-Creates a function that returns `true` if the process identified
-by the pid is in the tree of the given supervisor, to the given
-depth, otherwise `false`.
+Creates a function that returns `true` if the argument given to it
+is a process identifier, where the initial call of the process was
+through any of the given modules, otherwise `false`.
 
 `if_not(fun((pid()) -> boolean())) -> fun((pid()) -> boolean())`::
 
-Returns a function that negates the result of the given function.
+Creates a function that negates the result of the given function.
+
+`if_port() -> stampede:callback()`::
+
+Creates a function that returns `true` if the argument is a port
+identifier, otherwise `false`.
+
+`if_portinfo(atom(), term()) -> stampede:callback()`::
+
+Creates a function that returns `true` if the argument given to it
+is a port identifier whose port info value, specified by the first
+argument to this function, equals the second argument given to
+this function, otherwise `false`.
+
+`if_portname(term()) -> stampede:callback()`::
+
+Creates a function that returns `true` if the argument given to it
+is a port identifier whose name equals the argument given to this
+function, otherwise `false`.
+
+`if_process() -> stampede:callback()`::
+
+Creates a function that returns `true` if the argument is a process
+identifier, otherwise `false`.
+
+`if_sctp() -> stampede:callback()`::
+
+Creates a function that returns `true` if the argument given to it
+is a port for a SCTP socket, otherwise `false`.
+
+`if_supervisor() -> fun((pid()) -> boolean())`::
+
+Creates a function that returns `true` if the argument given to it is
+the process identifier of a standard OTP supervisor, otherwise `false`.
+
+`if_tcp() -> stampede:callback()`::
+
+Creates a function that returns `true` if the argument given to it
+is a port for a TCP socket, otherwise `false`.
+
+`if_udp() -> stampede:callback()`::
+
+Creates a function that returns `true` if the argument given to it
+is a port for a UDP socket, otherwise `false`.
 
 === Custom callbacks
 
 If you need even more sophisticated control, or want to combine
-some of the generated ones, you may also roll your own.
+some of the generated ones, you may also roll your own. Be aware
+that your function could be called with either a `pid` or a `port`,
+so should be able to handle both.
 
 .Example callback targeting supervisors or the `my_module` module
 
@@ -67,14 +118,51 @@ MyCallback=fun (Pid) ->
 end.
 ----
 
-Custom callbacks can also be used to log what stampede is about to kill.
+Custom callbacks can also be used to achieve side effects, eg to log what
+stampede is about to kill.
 
-.Example callback to log the process info of the pid to be killed
+Be aware that, if you wish to use such functions within `if_allof` or
+`if_anyof`, those work in a short-circuit fashion. Specifically, `if_allof`
+will stop evaluating when it encounters the first which returns `false`,
+whereas `if_anyof` will stop evaluating when it encounters the first
+which returns `true`. Thus, function order matters, and your custom
+callback may actually never get to be called for a given pid or port.
+
+For instance, when using a custom callback for logging together with true
+decision-making callbacks, it is usually best to place it last in an
+encompassing `if_allof`, otherwise it may log that some pid or port is
+being killed when really it is not because a later callback in the construct
+forbids it.
+
+.Example callback to log the info about the pid or port to be killed
 
 [source,erlang]
 ----
-MyCallback=fun (Pid) ->
-	logger:info("Killing ~p~n~p", [Pid, erlang:process_info(Pid)]),
-	true
+MyCallback=fun
+    (Pid) when is_pid(Pid) ->
+        logger:info("Killing Pid ~p~n~p", [Pid, erlang:process_info(Pid)]),
+        true;
+    (Port) when is_port(Port) ->
+        logger:info("Killing Port ~p~n~p", [Port, erlang:port_info(Port)]),
+        true
 end.
 ----
+
+.Example callback to kill only supervisors or TCP ports, and log only their process or port info
+
+[source,erlang]
+----
+MyCallback=stampede_callbacks:if_allof([
+    stampede_callbacks:if_anyof([
+        stampede_callbacks:if_supervisor(),
+        stampede_callbacks:if_tcp()],
+    fun
+        (Pid) when is_pid(Pid) ->
+            logger:info("Killing Pid ~p~n~p", [Pid, erlang:process_info(Pid)]),
+            true;
+        (Port) when is_port(Port) ->
+            logger:info("Killing Port ~p~n~p", [Port, erlang:port_info(Port)]),
+            true
+    end]).
+----
+

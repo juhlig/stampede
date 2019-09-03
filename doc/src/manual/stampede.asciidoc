@@ -7,7 +7,7 @@ stampede - Erlang Resilience Testing
 == Description
 
 The `stampede` module provides functions for starting and
-stopping the killing of processes belonging to a given
+stopping the killing of processes and ports belonging to a given
 application or supervisor.
 
 == Exports
@@ -20,9 +20,27 @@ application or supervisor.
 
 [source,erlang]
 ----
+interval() = {
+    non_neg_integer(),
+    non_neg_integer()
+}
+----
+
+Minimum and maximum time between kills.
+
+[source,erlang]
+----
+callback() = fun((pid() | port()) -> boolean()
+----
+
+A function which is called before each kill, to decide if it is allowed to kill the
+given process or port.
+
+[source,erlang]
+----
 opts() = #{
-	interval => {non_neg_integer(), non_neg_integer()},
-	before_kill => fun((pid()) -> boolean())
+	interval => interval(),
+	before_kill => callback()
 }
 ----
 
@@ -36,12 +54,15 @@ interval ({5000, 5000}) ::
 
 Minimum and Maximum time between kills.
 
-before_kill (fun (_) -> true end) ::
+before_kill (stampede_callbacks:any()) ::
 
-Function to be called before each kill, with the Pid of a process that is
-a candidate for being killed. It must return either `true` to allow the
-killing of this process, or `false` to disallow it. This enables the user
-to exert fine-grained control over the stampede, do some logging, etc.
+Function to be called before each kill, to decide if killing of the given pid
+or port is allowed.
+
+== Changelog
+
+* *0.3.0*: Added port killing. `before_kill` callback functions must also
+           accept ports now.
 
 == See also
 
