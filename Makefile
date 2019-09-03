@@ -1,6 +1,6 @@
 PROJECT = stampede
 PROJECT_DESCRIPTION = Application resilience testing
-PROJECT_VERSION = 0.1.0
+PROJECT_VERSION = 0.3.0
 
 TEST_DEPS = ct_helper
 dep_ct_helper = git https://github.com/ninenines/ct_helper master
