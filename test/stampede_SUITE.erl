@@ -30,7 +30,8 @@ end_per_suite(_) ->
 	ok.
 
 init_per_testcase(stampede_supervisor, Config) ->
-	stampede_test_sup_sup:start_link(),
+	{ok, Pid}=stampede_test_sup_sup:start_link(),
+	unlink(Pid),
 	Config;
 init_per_testcase(_, Config) ->
 	application:start(stampede_test),
