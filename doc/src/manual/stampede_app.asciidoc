@@ -19,3 +19,5 @@ be achieved with user-defined callbacks.
 == Changelog
 
 * *0.3.0*: Added port killing.
+* *0.4.0*: Added ability to retrieve and change the options of
+           running stampedes.

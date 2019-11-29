@@ -1,0 +1,31 @@
+= stampede:get_opts(3)
+
+== Name
+
+stampede:get_opts - Get the options of a running stampede
+
+== Description
+
+[source,erlang]
+----
+stampede:get_opts(Ref :: ref())
+    -> opts()
+----
+
+Get the options of the specified stampede.
+
+== Arguments
+
+Ref::
+
+The identifier of the stampede.
+
+== Return value
+
+A map is returned with the options of the specified stampede, as
+documented in link:man:stampede(3)[stampede(3)].
+
+== See also
+
+link:man:stampede:start_herd(3)[stampede:start_herd(3)]
+link:man:stampede:set_opts(3)[stampede:set_opts(3)]

@@ -61,6 +61,37 @@ start a stampede for any application you want to target.
 {ok, _}=stampede:start_herd(my_other_stampede, {application, my_other_app}).
 ----
 
+=== Getting and setting the options of running stampedes
+
+You can retrieve the options set for a running stampede with `stampede:get_opts/1`.
+
+.Get the options of the `my_stampede` stampede
+
+[source,erlang]
+----
+Opts=stampede:get_opts(my_stampede).
+----
+
+You can change the options of a running stampede with `stampede:set_opts/2`. Options
+not specified will be set to the defaults (ie, an `interval` of `{5000, 5000}` and/or
+a `before_kill` callback that always returns `true`).
+
+.Set the options of the `my_stampede` stampede
+
+[source,erlang]
+----
+ok=stampede:set_opts(my_stampede, NewOpts).
+----
+
+.Changing only the `interval` option of the `my_stampede` stampede 
+
+[source,erlang]
+----
+OldOpts=stampede:get_opts(my_stampede),
+NewOpts=OldOpts#{interval => {1000, 2000},
+ok=stampede:set_opts(my_stampede, NewOpts).
+----
+
 === Stopping stampedes
 
 When you decide you have stampeded the target application enough, you may stop
@@ -81,6 +112,8 @@ If you have multiple stampedes running, it is also possible to stop them all at 
 ----
 ok=stampede:stop_all().
 ----
+
+=== Notes ===
 
 If the target supervisor or the top supervisor of the target application exits, the stampede
 targeting it will crash. While stampede itself will not kill the target supervisor or the

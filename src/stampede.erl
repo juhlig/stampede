@@ -17,6 +17,9 @@
 -export([start_herd/2, start_herd/3]).
 -export([stop_herd/1]).
 -export([stop_all/0]).
+-export([default_opts/0]).
+-export([set_opts/2]).
+-export([get_opts/1]).
 
 -type ref() :: term().
 -export_type([ref/0]).
@@ -61,18 +64,49 @@ start_herd(Ref, {supervisor, TopSupName}, Opts) when is_atom(TopSupName) ->
 		_ ->
 			error(badarg)
 	end;
-start_herd(Ref, {supervisor, TopSup}, Opts0) when is_pid(TopSup) ->
-	DefaultOpts=#{interval => {5000, 5000},
-		before_kill => stampede_callbacks:if_any()},
-	Opts1=maps:merge(DefaultOpts, Opts0),
-	stampede_sup:start_herd(Ref, TopSup, Opts1);
+start_herd(Ref, {supervisor, TopSup}, Opts) when is_pid(TopSup) ->
+	stampede_sup:start_herd(Ref, TopSup, validate_opts(Opts));
 start_herd(_, _, _) ->
 	error(badarg).
 
 -spec stop_herd(ref()) -> ok | {error, term()}.
-stop_herd(App) ->
-	stampede_sup:stop_herd(App).
+stop_herd(Ref) ->
+	stampede_sup:stop_herd(Ref).
 
 -spec stop_all() -> ok.
 stop_all() ->
 	stampede_sup:stop_all().
+
+-spec default_opts() -> opts().
+default_opts() ->
+	#{
+		interval => {5000, 5000},
+		before_kill => stampede_callbacks:if_any()
+	}.
+
+-spec set_opts(ref(), opts()) -> ok.
+set_opts(Ref, Opts) ->
+	stampede_sup:set_opts(Ref, validate_opts(Opts)).
+
+-spec get_opts(ref()) -> opts().
+get_opts(Ref) ->
+	stampede_sup:get_opts(Ref).
+
+validate_opts(Opts) when is_map(Opts) ->
+	case lists:all(fun validate_opt/1, maps:to_list(Opts)) of
+		true ->
+			maps:merge(default_opts(), Opts);
+		false ->
+			error(badarg)
+	end;
+validate_opts(_) ->
+	error(badarg).
+
+validate_opt({interval, {Min, Max}}) ->
+	is_integer(Min) andalso Min>=0
+	andalso is_integer(Max) andalso Max>=0
+	andalso Min=<Max;
+validate_opt({before_kill, Fun}) ->
+	is_function(Fun, 1);
+validate_opt(_) ->
+	false.
