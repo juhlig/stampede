@@ -82,6 +82,22 @@ stampede_ports(_) ->
 	false=lists:any(fun (Port) -> undefined=/=erlang:port_info(Port) end, Killed),
 	ok.
 
+change_opts(_) ->
+	Opts1=#{
+		interval => Interval1={5000, 5000},
+		before_kill => Fun1=fun (_) -> 1, false end
+	},
+	{ok, _}=stampede:start_herd(stampede_test, {application, stampede_test}, Opts1),
+	Opts1=stampede:get_opts(stampede_test),
+	Opts2=#{
+		interval => Interval2={1000, 1000},
+		before_kill => Fun2=fun (_) -> 2, false end
+	},
+	stampede:set_opts(stampede_test, Opts2),
+	Opts2=stampede:get_opts(stampede_test),
+	ok=stampede:stop_herd(stampede_test),
+	ok.
+
 do_receive_loop() ->
 	do_receive_loop([]).
 

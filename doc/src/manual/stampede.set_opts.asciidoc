@@ -1,0 +1,36 @@
+= stampede:set_opts(3)
+
+== Name
+
+stampede:set_opts - Change the options of a running stampede
+
+== Description
+
+[source,erlang]
+----
+stampede:set_opts(Ref  :: ref(),
+                  Opts :: opts())
+    -> ok
+----
+
+Change the options of the specified stampede.
+
+== Arguments
+
+Ref::
+
+The identifier of the stampede.
+
+Opts::
+
+Options controlling the behavior of the stampede. The available
+options are documented in link:man:stampede(3)[stampede(3)].
+
+== Return value
+
+Always `ok`.
+
+== See also
+
+link:man:stampede:start_herd(3)[stampede:start_herd(3)]
+link:man:stampede:get_opts(3)[stampede:get_opts(3)]

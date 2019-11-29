@@ -19,6 +19,8 @@
 -export([start_link/0]).
 -export([start_herd/3]).
 -export([stop_herd/1, stop_all/0]).
+-export([set_opts/2]).
+-export([get_opts/1]).
 -export([init/1]).
 
 -spec start_link() -> {ok, pid()}.
@@ -46,5 +48,18 @@ stop_all() ->
 	_=[catch supervisor:terminate_child(?MODULE, Id) || {Id={stampede_herd, _}, _, supervisor, _} <- supervisor:which_children(?MODULE)],
 	ok.
 
+-spec set_opts(stampede:ref(), stampede:opts()) -> ok.
+set_opts(Ref, Opts) ->
+	stampede_herd:set_opts(get_herd_pid(Ref), Opts).
+
+-spec get_opts(stampede:ref()) -> stampede:opts().
+get_opts(Ref) ->
+	stampede_herd:get_opts(get_herd_pid(Ref)).
+
 init([]) ->
 	{ok, {#{}, []}}.
+
+get_herd_pid(Ref) ->
+	[HerdSup]=[Pid || {{stampede_herd, Ref1}, Pid, supervisor, _} <- supervisor:which_children(?MODULE), Ref1=:=Ref],
+	[HerdPid]=[Pid || {stampede_herd, Pid, worker, _} <- supervisor:which_children(HerdSup)],
+	HerdPid.
