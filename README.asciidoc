@@ -21,6 +21,9 @@ ok=application:start(stampede).
 %% Start stampede
 {ok, _}=stampede:start_herd(my_stampede, {application, my_app}).
 
+%% Activate stampede
+ok=stampede:activate(my_stampede).
+
 %% ... Wait and see what happens ...
 
 %% Stop stampede

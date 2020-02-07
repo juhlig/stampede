@@ -15,6 +15,9 @@ application or supervisor.
 * link:man:stampede:start_herd(3)[stampede:start_herd(3)] - Start a stampede
 * link:man:stampede:stop_herd(3)[stampede:stop_herd(3)] - Stop a stampede
 * link:man:stampede:stop_all(3)[stampede:stop_all(3)] - Stop all stampedes
+* link:man:stampede:activate(3)[stampede:activate(3)] - Activate a stampede
+* link:man:stampede:deactivate(3)[stampede:deactivate(3)] - Deactivate a stampede
+* link:man:stampede:is_active(3)[stampede:is_active(3)] - Check if a stampede is active
 * link:man:stampede:set_opts(3)[stampede:set_opts(3)] - Change the options of a running stampede
 * link:man:stampede:get_opts(3)[stampede:get_opts(3)] - Get the options of a running stampede
 
@@ -66,6 +69,7 @@ or port is allowed.
 * *0.3.0*: Added port killing. `before_kill` callback functions must also
            accept ports now.
 * *0.4.0*: Added ability to retrieve and change the options of running stampedes.
+* *0.5.0*: Added ability to deactivate (pause) and activate (resume) a stampede.
 
 == See also
 

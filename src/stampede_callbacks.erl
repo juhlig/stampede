@@ -1,4 +1,4 @@
-%% Copyright (c) 2019, Jan Uhlig <j.uhlig@mailingwork.de>
+%% Copyright (c) 2020, Jan Uhlig <j.uhlig@mailingwork.de>
 %%
 %% Permission to use, copy, modify, and/or distribute this software for any
 %% purpose with or without fee is hereby granted, provided that the above
@@ -128,7 +128,7 @@ if_child1(Pid, Supervisor, Depth) ->
 				Children
 			)
 	catch
-		exit:{noproc, _} ->
+		_:_ ->
 			false
 	end.
 

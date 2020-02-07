@@ -1,4 +1,4 @@
-%% Copyright (c) 2019, Jan Uhlig <j.uhlig@mailingwork.de>
+%% Copyright (c) 2020, Jan Uhlig <j.uhlig@mailingwork.de>
 %%
 %% Permission to use, copy, modify, and/or distribute this software for any
 %% purpose with or without fee is hereby granted, provided that the above
@@ -17,6 +17,9 @@
 -export([start_herd/2, start_herd/3]).
 -export([stop_herd/1]).
 -export([stop_all/0]).
+-export([activate/1]).
+-export([deactivate/1]).
+-export([is_active/1]).
 -export([default_opts/0]).
 -export([set_opts/2]).
 -export([get_opts/1]).
@@ -76,6 +79,18 @@ stop_herd(Ref) ->
 -spec stop_all() -> ok.
 stop_all() ->
 	stampede_sup:stop_all().
+
+-spec activate(ref()) -> ok.
+activate(Ref) ->
+	stampede_sup:activate(Ref).
+
+-spec deactivate(ref()) -> ok.
+deactivate(Ref) ->
+	stampede_sup:deactivate(Ref).
+
+-spec is_active(ref()) -> boolean().
+is_active(Ref) ->
+	stampede_sup:is_active(Ref).
 
 -spec default_opts() -> opts().
 default_opts() ->

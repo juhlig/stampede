@@ -1,4 +1,4 @@
-%% Copyright (c) 2019, Jan Uhlig <j.uhlig@mailingwork.de>
+%% Copyright (c) 2020, Jan Uhlig <j.uhlig@mailingwork.de>
 %%
 %% Permission to use, copy, modify, and/or distribute this software for any
 %% purpose with or without fee is hereby granted, provided that the above
@@ -25,7 +25,7 @@ start_link(TopSup, Opts) ->
 	supervisor:start_link(?MODULE, {TopSup, Opts}).
 
 init({TopSup, Opts}) ->
-	Tab = ets:new(?MODULE, []),
+	Tab = ets:new(?MODULE, [public]),
 	{
 		ok,
 		{

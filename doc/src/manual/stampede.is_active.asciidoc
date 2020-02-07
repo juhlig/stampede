@@ -1,0 +1,32 @@
+= stampede:is_active(3)
+
+== Name
+
+stampede:is_active - Check if a stampede is active
+
+== Description
+
+[source,erlang]
+----
+is_active(Ref :: ref())
+    -> boolean()
+----
+
+Check if the given stampede is activated or deactivated, ie.
+if it is killing processes and ports or not.
+
+== Arguments
+
+Ref::
+
+The stampede identifier given to `start_herd`.
+
+== Return value
+
+If the given stampede is active, `true` will be returned,
+otherwise `false`.
+
+== See also
+
+link:man:stampede:activate(3)[stampede:activate(3)]
+link:man:stampede:deactivate(3)[stampede:deactivate(3)]
