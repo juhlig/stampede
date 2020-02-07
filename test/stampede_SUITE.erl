@@ -1,4 +1,4 @@
-%% Copyright (c) 2019, Jan Uhlig <j.uhlig@mailingwork.de>
+%% Copyright (c) 2020, Jan Uhlig <j.uhlig@mailingwork.de>
 %%
 %% Permission to use, copy, modify, and/or distribute this software for any
 %% purpose with or without fee is hereby granted, provided that the above
@@ -49,6 +49,7 @@ stampede_application(_) ->
 	Self=self(),
 	ReportFun=fun (Pid) -> Self ! {killing, Pid}, true end,
 	{ok, _}=stampede:start_herd(stampede_test, {application, stampede_test}, #{interval => {100, 100}, before_kill => ReportFun}),
+	ok=stampede:activate(stampede_test),
 	timer:sleep(10000),
 	ok=stampede:stop_herd(stampede_test),
 	Killed=do_receive_loop(),
@@ -61,6 +62,7 @@ stampede_supervisor(_) ->
 	Self=self(),
 	ReportFun=fun (Pid) -> Self ! {killing, Pid}, true end,
 	{ok, _}=stampede:start_herd(stampede_test, {supervisor, stampede_test_sup_sup}, #{interval => {100, 100}, before_kill => ReportFun}),
+	ok=stampede:activate(stampede_test),
 	timer:sleep(10000),
 	ok=stampede:stop_herd(stampede_test),
 	Killed=do_receive_loop(),
@@ -75,6 +77,7 @@ stampede_ports(_) ->
 	ReportFun=fun (Port) -> Self ! {killing, Port}, true end,
 	BeforeKillFun=stampede_callbacks:if_allof([PortsOnlyFun, ReportFun]),
 	{ok, _}=stampede:start_herd(stampede_test, {application, stampede_test}, #{interval => {100, 100}, before_kill => BeforeKillFun}),
+	ok=stampede:activate(stampede_test),
 	timer:sleep(10000),
 	ok=stampede:stop_herd(stampede_test),
 	Killed=do_receive_loop(),
@@ -82,16 +85,33 @@ stampede_ports(_) ->
 	false=lists:any(fun (Port) -> undefined=/=erlang:port_info(Port) end, Killed),
 	ok.
 
+activate_deactivate(_) ->
+	doc("Ensure that a stampede can be activated and deactivated."),
+	Self=self(),
+	ReportFun=fun (Pid) -> Self ! {killing, Pid}, true end,
+	{ok, _}=stampede:start_herd(stampede_test, {application, stampede_test}, #{interval => {100, 100}, before_kill => ReportFun}),
+	timer:sleep(1000),
+	[]=do_receive_loop(),
+	ok=stampede:activate(stampede_test),
+	timer:sleep(1000),
+	ok=stampede:deactivate(stampede_test),
+	true=length(do_receive_loop())>0,
+	timer:sleep(1000),
+	[]=do_receive_loop(),
+	ok=stampede:stop_herd(stampede_test),
+	ok.
+
 change_opts(_) ->
 	Opts1=#{
-		interval => Interval1={5000, 5000},
-		before_kill => Fun1=fun (_) -> 1, false end
+		interval => {5000, 5000},
+		before_kill => fun (_) -> _=1, false end
 	},
 	{ok, _}=stampede:start_herd(stampede_test, {application, stampede_test}, Opts1),
+	ok=stampede:activate(stampede_test),
 	Opts1=stampede:get_opts(stampede_test),
 	Opts2=#{
-		interval => Interval2={1000, 1000},
-		before_kill => Fun2=fun (_) -> 2, false end
+		interval => {1000, 1000},
+		before_kill => fun (_) -> _=2, false end
 	},
 	stampede:set_opts(stampede_test, Opts2),
 	Opts2=stampede:get_opts(stampede_test),

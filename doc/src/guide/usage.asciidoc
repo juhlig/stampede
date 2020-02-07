@@ -24,7 +24,8 @@ supervisor, that application or supervisor must be running.
 
 === Starting stampedes
 
-Now you can run a stampede on the target application or supervisor.
+Now you can start a stampede on the target application or supervisor.
+To actually start killing anything, the stampede must be activated, see below.
 
 .Start stampeding the `my_app` application
 
@@ -59,6 +60,26 @@ start a stampede for any application you want to target.
 ----
 {ok, _}=stampede:start_herd(my_stampede, {application, my_app}),
 {ok, _}=stampede:start_herd(my_other_stampede, {application, my_other_app}).
+----
+
+=== Activating and deactivating stampedes
+
+After being started, a stamepde is still inactive. This means that the tracer is
+running, keeping track of the processes and ports belonging to the specified
+application or supervisor, but nothing is being killed.
+
+.Activating the `my_stampede` stampede
+
+[source,erlang]
+----
+ok=stampede:activate(my_stampede).
+----
+
+.Deactivate the `my_stampede` stampede
+
+[source,erlang]
+----
+ok=stampede:deactivate(my_stampede).
 ----
 
 === Getting and setting the options of running stampedes

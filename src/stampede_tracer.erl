@@ -1,4 +1,4 @@
-%% Copyright (c) 2019, Jan Uhlig <j.uhlig@mailingwork.de>
+%% Copyright (c) 2020, Jan Uhlig <j.uhlig@mailingwork.de>
 %%
 %% Permission to use, copy, modify, and/or distribute this software for any
 %% purpose with or without fee is hereby granted, provided that the above
@@ -23,13 +23,12 @@
 
 -spec start_link(pid(), ets:tab()) -> {ok, pid()}.
 start_link(TopSup, Tab) ->
-	{ok, Pid}=gen_server:start_link(?MODULE, TopSup, []),
-	ets:give_away(Tab, Pid, stampede),
-	{ok, Pid}.
+	gen_server:start_link(?MODULE, {TopSup, Tab}, []).
 
-init(TopSup) ->
+init({TopSup, Tab}) ->
 	Monitor=monitor(process, TopSup),
-	{ok, #state{top_sup={TopSup, Monitor}}}.
+	ok=collect(TopSup, Tab),
+	{ok, #state{top_sup={TopSup, Monitor}, tab=Tab}}.
 
 handle_call(_, _, State) ->
 	{noreply, State}.
@@ -37,9 +36,6 @@ handle_call(_, _, State) ->
 handle_cast(_, State) ->
 	{noreply, State}.
 
-handle_info({'ETS-TRANSFER', Tab, _, stampede}, State=#state{top_sup={TopSup, _}}) ->
-	ok=collect(TopSup, Tab),
-	{noreply, State#state{tab=Tab}};
 handle_info({'DOWN', Ref, process, Pid, _}, State=#state{top_sup={Pid, Ref}}) ->
 	{stop, {top_supervisor_exited, Pid}, State};
 handle_info({trace, Pid, spawned, _, _}, State=#state{tab=Tab}) when is_pid(Pid) ->
@@ -94,7 +90,7 @@ collect_trace_children(Sup, Tab) ->
 				Children
 			)
 	catch
-		exit:{noproc, _} ->
+		_:_ ->
 			ok
 	end.
 

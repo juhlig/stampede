@@ -1,4 +1,4 @@
-%% Copyright (c) 2019, Jan Uhlig <j.uhlig@mailingwork.de>
+%% Copyright (c) 2020, Jan Uhlig <j.uhlig@mailingwork.de>
 %%
 %% Permission to use, copy, modify, and/or distribute this software for any
 %% purpose with or without fee is hereby granted, provided that the above
@@ -19,6 +19,9 @@
 -export([start_link/0]).
 -export([start_herd/3]).
 -export([stop_herd/1, stop_all/0]).
+-export([activate/1]).
+-export([deactivate/1]).
+-export([is_active/1]).
 -export([set_opts/2]).
 -export([get_opts/1]).
 -export([init/1]).
@@ -47,6 +50,18 @@ stop_herd(Ref) ->
 stop_all() ->
 	_=[catch supervisor:terminate_child(?MODULE, Id) || {Id={stampede_herd, _}, _, supervisor, _} <- supervisor:which_children(?MODULE)],
 	ok.
+
+-spec activate(stampede:ref()) -> ok.
+activate(Ref) ->
+	stampede_herd:activate(get_herd_pid(Ref)).
+
+-spec deactivate(stampede:ref()) -> ok.
+deactivate(Ref) ->
+	stampede_herd:deactivate(get_herd_pid(Ref)).
+
+-spec is_active(stampede:ref()) -> boolean().
+is_active(Ref) ->
+	stampede_herd:is_active(get_herd_pid(Ref)).
 
 -spec set_opts(stampede:ref(), stampede:opts()) -> ok.
 set_opts(Ref, Opts) ->

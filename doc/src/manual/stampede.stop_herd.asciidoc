@@ -30,3 +30,4 @@ An `error` tuple is returned on error, the reason may be any term.
 
 link:man:stampede:stop_all(3)[stampede:stop_all(3)]
 link:man:stampede:start_herd(3)[stampede:start_herd(3)]
+link:man:stampede:deactivate(3)[stampede:deactivate(3)]

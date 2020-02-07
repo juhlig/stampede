@@ -1,4 +1,4 @@
-%% Copyright (c) 2019, Jan Uhlig <j.uhlig@mailingwork.de>
+%% Copyright (c) 2020, Jan Uhlig <j.uhlig@mailingwork.de>
 %%
 %% Permission to use, copy, modify, and/or distribute this software for any
 %% purpose with or without fee is hereby granted, provided that the above
@@ -17,15 +17,30 @@
 -behavior(gen_server).
 
 -export([start_link/2]).
+-export([activate/1]).
+-export([deactivate/1]).
+-export([is_active/1]).
 -export([set_opts/2]).
 -export([get_opts/1]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
--record(state, {tab, killer, timer, opts, pin}).
+-record(state, {tab, killer, opts, pin}).
 
 -spec start_link(ets:tab(), stampede:opts()) -> {ok, pid()}.
 start_link(Tab, Opts) ->
 	gen_server:start_link(?MODULE, {Tab, Opts}, []).
+
+-spec activate(pid()) -> ok.
+activate(Pid) ->
+	gen_server:call(Pid, activate).
+
+-spec deactivate(pid()) -> ok.
+deactivate(Pid) ->
+	gen_server:call(Pid, deactivate).
+
+-spec is_active(pid()) -> boolean().
+is_active(Pid) ->
+	gen_server:call(Pid, is_active).
 
 -spec set_opts(pid(), stampede:opts()) -> ok.
 set_opts(Pid, Opts) ->
@@ -36,15 +51,25 @@ get_opts(Pid) ->
 	gen_server:call(Pid, get_opts).
 
 init({Tab, Opts}) ->
+	{ok, #state{tab=Tab, opts=Opts}}.
+
+handle_call(activate, _, State=#state{pin=undefined}) ->
 	Pin=make_ref(),
 	schedule_kill(0, 0, Pin),
-	{ok, #state{tab=Tab, opts=Opts, pin=Pin}}.
-
+	{reply, ok, State#state{pin=Pin}};
+handle_call(deactivate, _, State) ->
+	{reply, ok, State#state{pin=undefined}};
+handle_call(is_active, _, State=#state{pin=undefined}) ->
+	{reply, false, State};
+handle_call(is_active, _, State) ->
+	{reply, true, State};
 handle_call(get_opts, _, State=#state{opts=Opts}) ->
 	{reply, Opts, State};
 handle_call(_, _, State) ->
 	{noreply, State}.
 
+handle_cast({set_opts, Opts}, State=#state{pin=undefined}) ->
+	{noreply, State#state{opts=Opts}};
 handle_cast({set_opts, Opts=#{interval:={Min, Max}}}, State) ->
 	Pin=make_ref(),
 	schedule_kill(Min, Max, Pin),
@@ -70,6 +95,8 @@ handle_info({kill_something, Pin}, State=#state{tab=Tab, killer=undefined, opts=
 		end
 	),
 	{noreply, State#state{killer=Monitor}};
+handle_info({'DOWN', Ref, process, Pid, normal}, State=#state{killer={Pid, Ref}, pin=undefined}) ->
+	{noreply, State#state{killer=undefined}};
 handle_info({'DOWN', Ref, process, Pid, normal}, State=#state{killer={Pid, Ref}, opts=#{interval:={Min, Max}}, pin=Pin}) ->
 	schedule_kill(Min, Max, Pin),
 	{noreply, State#state{killer=undefined}};

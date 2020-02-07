@@ -1,0 +1,30 @@
+= stampede:deactivate(3)
+
+== Name
+
+stampede:deactivate - Deactivate a stampede
+
+== Description
+
+[source,erlang]
+----
+activate(Ref :: ref())
+    -> ok
+----
+
+Deactivate the specified stampede, ie. stop killing processes and ports.
+
+== Arguments
+
+Ref::
+
+The stampede identifier given to `start_herd`.
+
+== Return value
+
+The atom `ok` is always returned.
+
+== See also
+
+link:man:stampede:activate(3)[stampede:activate(3)]
+link:man:stampede:is_active(3)[stampede:is_active(3)]

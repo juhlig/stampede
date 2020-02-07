@@ -8,9 +8,9 @@ stampede:start_herd - Start a stampede
 
 [source,erlang]
 ----
-stampede:start_herd(Ref    :: ref()
-                    Target :: target(),
-                    Opts   :: opts())
+start_herd(Ref    :: ref()
+           Target :: target(),
+           Opts   :: opts())
     -> supervisor:startchild_ret()
 ----
 
@@ -18,12 +18,16 @@ Start stampeding the specified application or supervisor with the given options.
 
 [source,erlang]
 ----
-stampede:start_herd(Ref    :: term(),
-                    Target :: target())
+start_herd(Ref    :: term(),
+           Target :: target())
     -> supervisor:startchild_ret()
 ----
 
 Start stampeding the specified application or supervisor with default options.
+
+The processes and ports belonging to the given application or supervisor will
+only be traced, but not killed  before the stampede is actually activated via
+`stampede:activate/1`.
 
 == Arguments
 
@@ -79,4 +83,5 @@ or is a library application, or if the target supervisor is not running.
 == See also
 
 link:man:stampede:stop_herd(3)[stampede:stop_herd(3)]
+link:man:stampede:activate(3)[stampede:activate(3)]
 link:man:stampede_callbacks(3)[stampede_callbacks(3)]
