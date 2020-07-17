@@ -68,6 +68,7 @@ collect(TopSup, Tab) ->
 	true = trace(TopSup),
 	collect_trace_children(TopSup, Tab),
 	collect_trace_ports(TopSup, Tab),
+	collect_trace_sockets(TopSup, Tab),
 	ok.
 
 collect_trace_children(Sup, Tab) ->
@@ -93,6 +94,37 @@ collect_trace_children(Sup, Tab) ->
 		_:_ ->
 			ok
 	end.
+
+collect_trace_sockets(TopSup, Tab) ->
+	collect_trace_process_sockets(TopSup, Tab),
+	lists:foreach(
+		fun
+			({Pid}) when is_pid(Pid) ->
+				collect_trace_process_sockets(Pid, Tab);
+			(_) ->
+				ok
+		end,
+		ets:tab2list(Tab)
+	),
+	ok.
+
+collect_trace_process_sockets(Pid, Tab) ->
+	{monitored_by, MonitoredBy}=erlang:process_info(Pid, monitored_by),
+	lists:foreach(
+		fun
+			(MonitoringPid) when is_pid(MonitoringPid) ->
+				case proc_lib:initial_call(MonitoringPid) of
+					{gen_tcp_socket, _, _} ->
+						collect_trace(MonitoringPid, Tab);
+					_ ->
+						ok
+				end;
+			(_) ->
+				ok
+		end,
+		MonitoredBy
+	),
+	ok.
 
 collect_trace_ports(TopSup, Tab) ->
 	lists:foreach(

@@ -132,18 +132,6 @@ if_child1(Pid, Supervisor, Depth) ->
 			false
 	end.
 
--spec if_tcp() -> stampede:callback().
-if_tcp() ->
-	if_portname("tcp_inet").
-
--spec if_udp() -> stampede:callback().
-if_udp() ->
-	if_portname("udp_inet").
-
--spec if_sctp() -> stampede:callback().
-if_sctp() ->
-	if_portname("sctp_inet").
-
 -spec if_portname(term()) -> stampede:callback().
 if_portname(Name) ->
 	if_portinfo(name, Name).
@@ -166,3 +154,33 @@ if_portinfo(Item, Value) ->
 		(_) ->
 			false
 	end.
+
+-spec if_tcp_port() -> stampede:callback().
+if_tcp_port() ->
+	if_portname("tcp_inet").
+
+-spec if_tcp_socket() -> stampede:callback().
+if_tcp_socket() ->
+	fun
+		(Pid) when is_pid(Pid) ->
+			case proc_lib:initial_call(Pid) of
+				{gen_tcp_socket, _, _} ->
+					true;
+				_ ->
+					false
+			end;
+		(_) ->
+			false
+	end.
+
+-spec if_tcp() -> stampede:callback().
+if_tcp() ->
+	if_anyof([if_tcp_port(), if_tcp_socket()]).
+
+-spec if_udp() -> stampede:callback().
+if_udp() ->
+	if_portname("udp_inet").
+
+-spec if_sctp() -> stampede:callback().
+if_sctp() ->
+	if_portname("sctp_inet").
