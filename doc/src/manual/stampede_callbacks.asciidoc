@@ -77,7 +77,7 @@ is a port identifier, `false` otherwise.
 ----
 if_portinfo(Item :: atom(),
             Value :: term())
-    -> fun(pid() | port()) -> boolean())
+    -> stampede:callback()
 ----
 
 Creates a function that returns `true` if the argument given to it
@@ -88,7 +88,7 @@ otherwise.
 [source,erlang]
 ----
 if_portname(Name :: term())
-    -> fun(pid() | port()) -> boolean())
+    -> stampede:callback()
 ----
 
 Creates a function that returns `true` if the argument given to it
@@ -146,6 +146,9 @@ is a port identifier for an UDP socket, `false` otherwise.
 * *0.3.0*: Added  functions `if_allof`, `if_anyof`, `if_port`,
            `if_process`, `if_port`, `if_portinfo`, `if_portname`,
            `if_sctp`, `if_tcp` and `if_udp`.
+* *0.6.0*: `if_tcp` now also identifies TCP sockets using the
+           socket backend for `gen_tcp`/`inet` that was introduced
+           as an experimental feature in OTP/23.
 
 == See also
 

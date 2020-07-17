@@ -85,7 +85,10 @@ the process identifier of a standard OTP supervisor, otherwise `false`.
 `if_tcp() -> stampede:callback()`::
 
 Creates a function that returns `true` if the argument given to it
-is a port for a TCP socket, otherwise `false`.
+is either a port for a TCP socket, or a `gen_tcp_socket` process
+(ie a connection using the socket backend for `gen_tcp`/`inet`
+that was introduced as an experimental feature in OTP/23), otherwise
+`false`.
 
 `if_udp() -> stampede:callback()`::
 

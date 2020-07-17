@@ -18,7 +18,11 @@
 -compile(nowarn_export_all).
 
 -import(ct_helper, [doc/1]).
--import(stampede_test_helper, [collect_pids/0, collect_ports/0]).
+-import(stampede_test_helper, [collect_pids/0]).
+
+-ifndef(OTP_RELEASE).
+-define(OTP_RELEASE, 0).
+-endif.
 
 all() ->
 	ct_helper:all(?MODULE).
@@ -32,98 +36,74 @@ end_per_suite(_) ->
 
 cb_if_anyof(_) ->
 	doc("Ensure that the if_anyof callback works"),
-	CbGen=fun (Res1, Res2) -> stampede_callbacks:if_anyof([fun (_) -> Res1 end, fun (_) -> Res2 end]) end,
-	Pids=collect_pids(),
-	true=lists:all(
-		fun
-			({_, _, _, Pid}) ->
-				(CbGen(true, true))(Pid) andalso
-				(CbGen(true, false))(Pid) andalso
-				(CbGen(false, true))(Pid) andalso
-				not (CbGen(false, false))(Pid)
-		end,
-		Pids
-	),
+	CbGen=fun (Results) -> stampede_callbacks:if_anyof([fun (_) -> Result end || Result <- Results]) end,
+	Pid=self(),
+	false=(CbGen([]))(Pid),
+	true=(CbGen([true]))(Pid),
+	false=(CbGen([false]))(Pid),
+	true=(CbGen([true, true]))(Pid),
+	true=(CbGen([true, false]))(Pid),
+	true=(CbGen([false, true]))(Pid),
+	false=(CbGen([false, false]))(Pid),
+	true=(CbGen([true, true, true]))(Pid),
+	true=(CbGen([true, true, false]))(Pid),
+	true=(CbGen([true, false, true]))(Pid),
+	true=(CbGen([true, false, false]))(Pid),
+	true=(CbGen([false, true, true]))(Pid),
+	true=(CbGen([false, true, false]))(Pid),
+	true=(CbGen([false, false, true]))(Pid),
+	false=(CbGen([false, false, false]))(Pid),
 	ok.
 
 cb_if_allof(_) ->
 	doc("Ensure that the if_allof callback works"),
-	CbGen=fun (Res1, Res2) -> stampede_callbacks:if_allof([fun (_) -> Res1 end, fun (_) -> Res2 end]) end,
-	Pids=collect_pids(),
-	true=lists:all(
-		fun
-			({_, _, _, Pid}) ->
-				(CbGen(true, true))(Pid) andalso
-				not (CbGen(true, false))(Pid) andalso
-				not (CbGen(false, true))(Pid) andalso
-				not (CbGen(false, false))(Pid)
-		end,
-		Pids
-	),
+	CbGen=fun (Results) -> stampede_callbacks:if_allof([fun (_) -> Result end || Result <- Results]) end,
+	Pid=self(),
+	true=(CbGen([]))(Pid),
+	true=(CbGen([true]))(Pid),
+	false=(CbGen([false]))(Pid),
+	true=(CbGen([true, true]))(Pid),
+	false=(CbGen([true, false]))(Pid),
+	false=(CbGen([false, true]))(Pid),
+	false=(CbGen([false, false]))(Pid),
+	true=(CbGen([true, true, true]))(Pid),
+	false=(CbGen([true, true, false]))(Pid),
+	false=(CbGen([true, false, true]))(Pid),
+	false=(CbGen([true, false, false]))(Pid),
+	false=(CbGen([false, true, true]))(Pid),
+	false=(CbGen([false, true, false]))(Pid),
+	false=(CbGen([false, false, true]))(Pid),
+	false=(CbGen([false, false, false]))(Pid),
 	ok.
 
 cb_if_not(_) ->
 	doc("Ensure that the if_not callback works."),
-	Cb=stampede_callbacks:if_not(fun (_) -> false end),
-	Pids=collect_pids(),
-	true=lists:all(
-		fun
-			({_, _, _, Pid}) ->
-				Cb(Pid)
-		end,
-		Pids
-	),
+	Pid=self(),
+	true=(stampede_callbacks:if_not(fun (_) -> false end))(Pid),
+	false=(stampede_callbacks:if_not(fun (_) -> true end))(Pid),
 	ok.
 
 cb_if_process(_) ->
 	doc("Ensure that the if_process callback works."),
-	Cb=stampede_callbacks:if_process(),
-	Pids=collect_pids(),
-	Ports=collect_ports(),
-	true=lists:all(
-		fun
-			({_, _, _, Pid}) ->
-				Cb(Pid);
-			(Port) ->
-				not Cb(Port)
-		end,
-		Pids++Ports
-	),
+	true=(stampede_callbacks:if_process())(self()),
+	false=(stampede_callbacks:if_process())(do_make_port()),
 	ok.
 
 cb_if_port(_) ->
 	doc("Ensure that the if_port callback works."),
-	Cb=stampede_callbacks:if_port(),
-	Pids=collect_pids(),
-	Ports=collect_ports(),
-	true=lists:all(
-		fun
-			({_, _, _, Pid}) ->
-				not Cb(Pid);
-			(Port) ->
-				Cb(Port)
-		end,
-		Pids++Ports
-	),
+	true=(stampede_callbacks:if_port())(do_make_port()),
+	false=(stampede_callbacks:if_port())(self()),
 	ok.
 
 cb_if_any(_) ->
 	doc("Ensure that the if_any callback works."),
-	Cb=stampede_callbacks:if_any(),
-	Pids=collect_pids(),
-	true=lists:all(
-		fun
-			({_, _, _, Pid}) ->
-				Cb(Pid)
-		end,
-		Pids
-	),
+	true=(stampede_callbacks:if_any())(self()),
+	true=(stampede_callbacks:if_any())(do_make_port()),
 	ok.
 
 cb_if_supervisor(_) ->
 	doc("Ensure that the if_supervisor callback works."),
 	Cb=stampede_callbacks:if_supervisor(),
-	Pids=collect_pids(),
 	true=lists:all(
 		fun
 			({_, _, supervisor, Pid}) ->
@@ -131,7 +111,7 @@ cb_if_supervisor(_) ->
 			({_, _, worker, Pid}) ->
 				not Cb(Pid)
 		end,
-		Pids
+		collect_pids()
 	),
 	ok.
 
@@ -139,7 +119,6 @@ cb_if_module(_) ->
 	doc("Ensure that the if_module callback works."),
 	Module=stampede_test_wrk,
 	Cb=stampede_callbacks:if_module([Module]),
-	Pids=collect_pids(),
 	true=lists:all(
 		fun
 			({_, Mod, _, Pid}) when Mod=:=Module ->
@@ -147,13 +126,12 @@ cb_if_module(_) ->
 			({_, _, _, Pid}) ->
 				not Cb(Pid)
 		end,
-		Pids
+		collect_pids()
 	),
 	ok.
 
 cb_if_child_infinite(_) ->
 	doc("Ensure that the if_child callback works on infinite depth."),
-	Pids=collect_pids(),
 	Cb=stampede_callbacks:if_child(infinity, stampede_test_sup_sup),
 	true=lists:all(
 		fun
@@ -162,13 +140,12 @@ cb_if_child_infinite(_) ->
 			({_, _, _, Pid}) ->
 				Cb(Pid)
 		end,
-		Pids
+		collect_pids()
 	),
 	ok.
 
 cb_if_child_direct(_) ->
 	doc("Ensure that the if_child callback works on direct children."),
-	Pids=collect_pids(),
 	Cb=stampede_callbacks:if_child(1, stampede_test_sup_sup),
 	true=lists:all(
 		fun
@@ -179,7 +156,7 @@ cb_if_child_direct(_) ->
 			({_, _, _, Pid}) ->
 				not Cb(Pid)
 		end,
-		Pids
+		collect_pids()
 	),
 	ok.
 
@@ -201,72 +178,58 @@ cb_if_child_subsup(_) ->
 
 cb_if_portname(_) ->
 	doc("Ensure that the if_portname callback works"),
-	Cb=stampede_callbacks:if_portname("tcp_inet"),
-	Ports=collect_ports(),
-	true=lists:all(
-		fun
-			(Port) ->
-				case erlang:port_info(Port, name) of
-					{name, "tcp_inet"} ->
-						Cb(Port);
-					_ ->
-						not Cb(Port)
-				end
-		end,
-		Ports
-	),
+	{ok, TcpPort}=gen_tcp:listen(0, [{active, false}]),
+	true=(stampede_callbacks:if_portname("tcp_inet"))(TcpPort),
+	ok=gen_tcp:close(TcpPort),
+	{ok, UdpPort}=gen_udp:open(0, [{active, false}]),
+	false=(stampede_callbacks:if_portname("tcp_inet"))(UdpPort),
+	ok=gen_udp:close(UdpPort),
 	ok.
 
 cb_if_portinfo(_) ->
 	doc("Ensure that the if_portinfo callback works"),
-	Cb=stampede_callbacks:if_portinfo(name, "tcp_inet"),
-	Ports=collect_ports(),
-	true=lists:all(
-		fun
-			(Port) ->
-				case erlang:port_info(Port, name) of
-					{name, "tcp_inet"} ->
-						Cb(Port);
-					_ ->
-						not Cb(Port)
-				end
-		end,
-		Ports
-	),
+	{ok, TcpPort}=gen_tcp:listen(0, [{active, false}]),
+	true=(stampede_callbacks:if_portinfo(name, "tcp_inet"))(TcpPort),
+	ok=gen_tcp:close(TcpPort),
+	{ok, UdpPort}=gen_udp:open(0, [{active, false}]),
+	false=(stampede_callbacks:if_portinfo(name, "tcp_inet"))(UdpPort),
+	ok=gen_udp:close(UdpPort),
 	ok.
 
 cb_if_tcp(_) ->
 	doc("Ensure that the if_tcp callback works."),
-	Cb=stampede_callbacks:if_tcp(),
-	Ports=collect_ports(),
-	true=lists:all(
-		fun
-			(Port) ->
-				case erlang:port_info(Port, name) of
-					{name, "tcp_inet"} ->
-						Cb(Port);
-					_ ->
-						not Cb(Port)
-				end
-		end,
-		Ports
-	),
+	{ok, TcpPort}=gen_tcp:listen(0, [{active, false}]),
+	true=(stampede_callbacks:if_tcp())(TcpPort),
+	ok=gen_tcp:close(TcpPort),
+	%% The socket backend for gen_tcp/inet was introduced as an
+	%% EXPERIMENTAL feature in OTP/23. erlang:atom_to_binary/1
+	%% appears in the same release and is used as an indicator
+	%% if this part of the test can be performed.
+	case erlang:function_exported(erlang, atom_to_binary, 1) of
+		true ->
+			{ok, TcpSocket}=gen_tcp:listen(0, [{inet_backend, socket}, {active, false}]),
+			{'$inet', gen_tcp_socket, {TcpSocketCtrl, _}}=TcpSocket,
+			true=(stampede_callbacks:if_tcp())(TcpSocketCtrl),
+			ok=gen_tcp:close(TcpSocket);
+		false ->
+			ok
+	end,
+	{ok, UdpPort}=gen_udp:open(0, [{active, false}]),
+	false=(stampede_callbacks:if_tcp())(UdpPort),
+	ok=gen_udp:close(UdpPort),
 	ok.
 
 cb_if_udp(_) ->
 	doc("Ensure that the if_udp callback works."),
-	Cb=stampede_callbacks:if_udp(),
-	Ports=collect_ports(),
-	true=lists:all(
-		fun
-			(Port) ->
-				case erlang:port_info(Port, name) of
-					{name, "udp_inet"} ->
-						Cb(Port);
-					_ ->
-						not Cb(Port)
-				end
-		end,
-		Ports
-	),
+	{ok, UdpPort}=gen_udp:open(0, [{active, false}]),
+	true=(stampede_callbacks:if_udp())(UdpPort),
+	ok=gen_udp:close(UdpPort),
+	{ok, TcpPort}=gen_tcp:listen(0, [{active, false}]),
+	false=(stampede_callbacks:if_udp())(TcpPort),
+	ok=gen_tcp:close(TcpPort),
 	ok.
+
+do_make_port() ->
+	{ok, Port}=gen_tcp:listen(0, [{active, false}]),
+	ok=gen_tcp:close(Port),
+	Port.
