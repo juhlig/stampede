@@ -24,6 +24,6 @@ jobs:
       - name: Compile
         run: make
       - name: Test
-        run: make test
+        run: make tests
       - name: Dialyze
         run: make dialyze
